@@ -1,0 +1,91 @@
+
+    <!DOCTYPE html>
+    <html lang="it">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Report Risposte RAG</title>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+            
+            body { font-family: 'Inter', sans-serif; background-color: #f4f7f8; color: #333; margin: 0; padding: 40px 20px; }
+            h1 { text-align: center; color: #1e293b; margin-bottom: 40px; font-weight: 700; letter-spacing: -0.5px; }
+            .container { max-width: 1500px; margin: 0 auto; background-color: #fff; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); overflow: hidden; }
+            table { width: 100%; border-collapse: collapse; text-align: left; table-layout: fixed; }
+            th, td { padding: 20px; border-bottom: 1px solid #e2e8f0; vertical-align: top; line-height: 1.6; word-wrap: break-word; }
+            th { background-color: #f8fafc; color: #475569; font-weight: 600; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px; }
+            tr:last-child td { border-bottom: none; }
+            tr:hover { background-color: #fbfcfd; }
+            
+            /* Stili per le colonne (Totale 100%) */
+            .col-domanda { width: 15%; font-weight: 600; color: #0f172a; }
+            .col-verita { width: 20%; color: #475569; font-size: 14px; background-color: #fafafa;}
+            .col-pagina { width: 5%; text-align: center; font-weight: bold; color: #64748b; }
+            .col-rag { width: 25%; font-size: 15px; color: #1e293b; background-color: #f0fdf4; }
+            .col-fonte { width: 35%; font-size: 13px; color: #475569; font-style: italic; background-color: #f8fafc; border-left: 2px solid #cbd5e1; }
+            
+            /* Sfumatura per righe alternate */
+            tbody tr:nth-child(even) { background-color: #fcfcfc; }
+        </style>
+    </head>
+    <body>
+        <h1>📊 Report Modello RAG (Fonti Estratte)</h1>
+        <div class="container">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-domanda">Domanda</th>
+                        <th class="col-verita">Ground Truth Originale</th>
+                        <th class="col-pagina">Pag.</th>
+                        <th class="col-rag">Risposta Generata (RAG)</th>
+                        <th class="col-fonte">Testo Originale (Fonte Citata)</th>
+                    </tr>
+                </thead>
+                <tbody>
+    
+                    <tr>
+                        <td class="col-domanda">Qual'è la distanza minima tra il fronte del rotabile e la posizione dell'antenna Eurobalise?</td>
+                        <td class="col-verita">The antenna shall be placed such that the Reference Mark of the balise <br>antenna lies:<br>• between 2m from the front of the engine and the 1st axle<br>: The minimum value of 2m shall be ensured taking into<br>account dynamic effects of the coupling</td>
+                        <td class="col-pagina">20</td>
+                        <td class="col-rag">INFORMAZIONE NON PRESENTE</td>
+                        <td class="col-fonte">"Fonte non formattata correttamente"</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Cosa si intende come "last switchable balise"?</td>
+                        <td class="col-verita">The «last switchable balise» of a balise group refers to the last encountered switchable balise with regards to the balise group crossing direction.</td>
+                        <td class="col-pagina">12</td>
+                        <td class="col-rag">Il “last switchable balise” di un gruppo di balise è l’ultima balise commutabile incontrata rispetto alla direzione di attraversamento del gruppo di balise.</td>
+                        <td class="col-fonte">""- 3.3.1.4 The «last switchable balise» of a balise group refers to the last encountered switchable balise with regards to the balise group crossing direction.""</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Come si misura la distanza tra due BG consecutivi?</td>
+                        <td class="col-verita">Distance between balise groups is by definition the distance between closest balises of the two groups (i.e. between the Balise Reference Mark of the last one of the first group and the Balise Reference Mark of the first one of the second group).</td>
+                        <td class="col-pagina">12</td>
+                        <td class="col-rag">La distanza tra due balise (BG) consecutive si misura dalla marcatura di riferimento di una balise a quella della successiva, cioè “from reference mark to reference mark”. Per il gruppo è stabilita come non superiore a 12 m.</td>
+                        <td class="col-fonte">""| Rule          | The maximum distance between two consecutive balises within the same group shall be 12 m from reference mark to reference mark.""</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Che differenza c'è tra la distanza tra due BG consecutivi e la distanza di linking?</td>
+                        <td class="col-verita">Note: This convention should not be mixed up with the distance used in the linking information (i.e. between the Balise Reference Mark of the balise with N_PIG variable = 0 of the first group and the Balise Reference Mark of the balise with N_PIG variable = 0 of the second group); see following figure [...]</td>
+                        <td class="col-pagina">12</td>
+                        <td class="col-rag">La distanza tra due BG (balise) consecutivi è una misura fisica, limitata a un massimo di 12 m da un riferimento all’altro, e serve a verificare rapidamente l’eventuale perdita di una balise all’interno del gruppo. La “distanza di linking”, invece, non è una distanza fisica ma un concetto logico relativo all’annuncio dei gruppi di balise: i gruppi con qualificatore “unlinked” non devono mai essere annunciati tramite linking, pertanto il linking riguarda la capacità di collegare/annunciare i gruppi e non una specifica separazione metrica.</td>
+                        <td class="col-fonte">""| Rule          | The maximum distance between two consecutive balises within the same group shall be 12 m from reference mark to reference mark.                                                                              |<br>|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|<br>| Reference     |                                                                                                                                                                                                              |<br>| Justification | The distance must be as short as possible in order to determine potential loss of balises as soon as possible, but must respect the longest minimum distance according to rule referenced in 4.1.1.1 herein. |<br><br>## 4.2.4.8 Linking data handling<br><br>## 4.2.4.8.1<br><br>| Rule          | Balise groups with balise group qualifier 'unlinked' shall never be announced via linking.                                                               |<br>|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|<br>| Reference     |                                                                                                                                                          |<br>| Justification | This is to avoid any contradiction between the consistency reaction regarding 'Unlinked' balise groups and the one regarding announced linking reaction. |"</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Quali sono le regole di installazione per le balise?</td>
+                        <td class="col-verita">SUBSET-036<br>❑ Section 4.2.5: Cross-talk protection<br>❑ Section 5.2 : Balise air gap interface<br>❑ Section 5.6.2 : Installation requirements for balises<br>❑ Section 5.6.3: Distance between balises<br>❑ Section 5.7: Environmental Conditions</td>
+                        <td class="col-pagina">12</td>
+                        <td class="col-rag">Le regole di installazione per le balise prevedono il rispetto del profilo di missione di riferimento (SUBSET‑091, capitolo 10) e delle specifiche relative a numero di gruppi di balise non collegati e distanze massime tra gruppi. In particolare, per le balise posizionate in prossimità di un segnale con informazioni commutate, nessuna balise situata nella parte posteriore del punto di arresto operazionale può essere collocata a più di 0,7 m dietro tale punto.</td>
+                        <td class="col-fonte">""| Rule          | With regards to balises at a signal containing switched information any balise located in rear of the operational stopping location shall not be located further than 0.7m in rear of the operational stopping location. |""</td>
+                    </tr>
+        
+                </tbody>
+            </table>
+        </div>
+    </body>
+    </html>
+    

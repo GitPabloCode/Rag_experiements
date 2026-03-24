@@ -1,0 +1,91 @@
+
+    <!DOCTYPE html>
+    <html lang="it">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Report Risposte RAG</title>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+            
+            body { font-family: 'Inter', sans-serif; background-color: #f4f7f8; color: #333; margin: 0; padding: 40px 20px; }
+            h1 { text-align: center; color: #1e293b; margin-bottom: 40px; font-weight: 700; letter-spacing: -0.5px; }
+            .container { max-width: 1500px; margin: 0 auto; background-color: #fff; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); overflow: hidden; }
+            table { width: 100%; border-collapse: collapse; text-align: left; table-layout: fixed; }
+            th, td { padding: 20px; border-bottom: 1px solid #e2e8f0; vertical-align: top; line-height: 1.6; word-wrap: break-word; }
+            th { background-color: #f8fafc; color: #475569; font-weight: 600; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px; }
+            tr:last-child td { border-bottom: none; }
+            tr:hover { background-color: #fbfcfd; }
+            
+            /* Stili per le colonne (Totale 100%) */
+            .col-domanda { width: 15%; font-weight: 600; color: #0f172a; }
+            .col-verita { width: 20%; color: #475569; font-size: 14px; background-color: #fafafa;}
+            .col-pagina { width: 5%; text-align: center; font-weight: bold; color: #64748b; }
+            .col-rag { width: 25%; font-size: 15px; color: #1e293b; background-color: #f0fdf4; }
+            .col-fonte { width: 35%; font-size: 13px; color: #475569; font-style: italic; background-color: #f8fafc; border-left: 2px solid #cbd5e1; }
+            
+            /* Sfumatura per righe alternate */
+            tbody tr:nth-child(even) { background-color: #fcfcfc; }
+        </style>
+    </head>
+    <body>
+        <h1>📊 Report Modello RAG (Fonti Estratte)</h1>
+        <div class="container">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-domanda">Domanda</th>
+                        <th class="col-verita">Ground Truth Originale</th>
+                        <th class="col-pagina">Pag.</th>
+                        <th class="col-rag">Risposta Generata (RAG)</th>
+                        <th class="col-fonte">Testo Originale (Fonte Citata)</th>
+                    </tr>
+                </thead>
+                <tbody>
+    
+                    <tr>
+                        <td class="col-domanda">Qual'è la distanza minima tra il fronte del rotabile e la posizione dell'antenna Eurobalise?</td>
+                        <td class="col-verita">The antenna shall be placed such that the Reference Mark of the balise <br>antenna lies:<br>• between 2m from the front of the engine and the 1st axle<br>: The minimum value of 2m shall be ensured taking into<br>account dynamic effects of the coupling</td>
+                        <td class="col-pagina">20</td>
+                        <td class="col-rag">Risposta: La distanza minima tra il fronte del rotabile e la posizione dell'antenna Eurobalise è di 2 metri.<br>Testo Originale: "| Justification | The maximum value of 12.5m has been specified to allow the use of the same antenna for both directions, on a locomotive, and to provide sufficient space to install the antenna on all different types of trains. Furthermore the aim of the minimum distance of 2m to train front is : min2m min2m - to avoid an antenna receiving a telegram from a balise energised by another antenna - to avoid a balise energised by one antenna perturbing the transmission of an adjacent antenna. |" [1]</td>
+                        <td class="col-fonte">"Fonte non formattata correttamente"</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Cosa si intende come "last switchable balise"?</td>
+                        <td class="col-verita">The «last switchable balise» of a balise group refers to the last encountered switchable balise with regards to the balise group crossing direction.</td>
+                        <td class="col-pagina">12</td>
+                        <td class="col-rag">Risposta: Il contesto fornito non definisce esplicitamente il termine "last switchable balise". Si riferisce solo alla distanza minima che deve essere rispettata tra l'ultima balise commutabile di un gruppo e il limite della sezione di rilevamento del treno, specificando che tale balise deve essere posta almeno 13,8 metri dietro il punto in cui il dispositivo di rilevamento della sezione successiva può iniziare a rilevare il treno [1]. Tuttavia, non fornisce una definizione del cosa si intenda per "last switchable balise" in termini tecnici o funzionali.<br><br>Testo Originale: "| Rule          | If the transition from one train detection section to the following one affects the information transmitted by a switchable balise, this switchable balise shall be placed at least 13.8 m in rear of the location where the detection device of the next section may start detecting the train.                                                                                                                                                                                                                                                                                                                                            |" [1]</td>
+                        <td class="col-fonte">"Fonte non formattata correttamente"</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Come si misura la distanza tra due BG consecutivi?</td>
+                        <td class="col-verita">Distance between balise groups is by definition the distance between closest balises of the two groups (i.e. between the Balise Reference Mark of the last one of the first group and the Balise Reference Mark of the first one of the second group).</td>
+                        <td class="col-pagina">12</td>
+                        <td class="col-rag">Risposta: La distanza tra due balise consecutive nello stesso gruppo viene misurata dal segno di riferimento (reference mark) di una balise al segno di riferimento della balise successiva, e la distanza massima consentita è di 12 m.  <br>Testo Originale: "| Rule          | The maximum distance between two consecutive balises within the same group shall be 12 m from reference mark to reference mark.                                                                              |" [1]</td>
+                        <td class="col-fonte">"Fonte non formattata correttamente"</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Che differenza c'è tra la distanza tra due BG consecutivi e la distanza di linking?</td>
+                        <td class="col-verita">Note: This convention should not be mixed up with the distance used in the linking information (i.e. between the Balise Reference Mark of the balise with N_PIG variable = 0 of the first group and the Balise Reference Mark of the balise with N_PIG variable = 0 of the second group); see following figure [...]</td>
+                        <td class="col-pagina">12</td>
+                        <td class="col-rag">Risposta: La distanza tra due balise consecutive (BG) nello stesso gruppo deve essere al massimo 12 m da riferimento a riferimento, mentre la distanza di linking si riferisce alla distanza massima che il sistema a bordo deve essere in grado di gestire, pari a 30 km, con una media di un gruppo balise collegato per chilometro. Il linking consente la trasmissione di informazioni su più gruppi balise in un unico pacchetto, fino a un massimo di 30 gruppi collegati, grazie a 29 iterazioni nel pacchetto di linking.<br><br>Testo Originale: "| Rule          | The maximum distance between two consecutive balises within the same group shall be 12 m from reference mark to reference mark.                                                                              |<br>|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|<br>| Reference     |                                                                                                                                                                                                              |<br>| Justification | The distance must be as short as possible in order to determine potential loss of balises as soon as possible, but must respect the longest minimum distance according to rule referenced in 4.1.1.1 herein.<br><br><!-- image -->"[1]<br><br>Testo Originale: "| Justification | 29 iterations allow for a maximum of 30 linked balise groups to be transmitted in one packet. Because new linking information completely overwrites old information, the amount of linked balises to be stored is unchanged Exception: In case linking information is transmitted as infill information, Engineering must take care of any balises between the infill location and the infill reference location (i.e. the main signal balise group) which remain stored on- board | The on-board system should be able to manage an MA of 30 km with an average of 1 linked balise group per km. |"[1]</td>
+                        <td class="col-fonte">"Fonte non formattata correttamente"</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Quali sono le regole di installazione per le balise?</td>
+                        <td class="col-verita">SUBSET-036<br>❑ Section 4.2.5: Cross-talk protection<br>❑ Section 5.2 : Balise air gap interface<br>❑ Section 5.6.2 : Installation requirements for balises<br>❑ Section 5.6.3: Distance between balises<br>❑ Section 5.7: Environmental Conditions</td>
+                        <td class="col-pagina">12</td>
+                        <td class="col-rag">Risposta: Le regole per l'installazione delle balise sono indicate nel contesto fornito e riguardano le tolleranze laterali e angolari, l'installazione in curve strette, il rispetto del profilo di missione, e il riferimento alle sezioni specifiche dei documenti Subset-036 e SUBSET-091. In particolare, per l'installazione delle balise, devono essere rispettate le regole di riferimento indicate in Subset-036 sezione 5.6.2.3 per le tolleranze laterali e angolari, in Subset-036 sezione 5.6.5 per l'installazione in curve orizzontali o verticali, e in SUBSET-091 capitolo 10 per quanto riguarda il numero di gruppi di balise non collegati e le distanze massime tra gruppi di balise, sulla base del profilo di missione. Inoltre, è presente una tabella che elenca ripetutamente la sezione "4.1.1 Rules for balises" a pagina 12, suggerendo un riferimento strutturato a tale parte del documento.<br><br>Testo Originale: "## 4.1.1.8 Lateral and angular tolerances for balise installation<br><br>Rule<br><br>Reminder: the rules of the reference below must be respected.<br><br>Reference<br><br>Subset-036 section 5.6.2.3<br><br>Justification<br><br>-<br><br>© This document has been developed and released by UNISIG<br><br><!-- image --><br><br>## 4.1.1.9 Rules for balise installation in narrow curves<br><br>| Rule          | Reminder: the rules of the reference below must be respected regards the installation of Eurobalises in horizontal or vertical curves.   |<br>|---------------|------------------------------------------------------------------------------------------------------------------------------------------|<br>| Reference     | Subset-036 section 5.6.5                                                                                                                 |<br>| Justification | -                                                                                                                                        |<br><br>## 4.1.1.10 Intentionally deleted"[id="1"]<br><br>Testo Originale: "## 4.1.1.13 Balise installation relative to mission profile<br><br>| Rule          | Reminder: the rules of the reference below must be respected e.g. - Number of Unlinked Balise groups (marked as unlinked) - Maximum distances between Balise groups   |<br>|---------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------|<br>| Reference     | SUBSET-091 - chapter 10 Mission Profile                                                                                                                               |<br>| Justification | The safety analysis and safety requirements are based on this mission profile of the reference above.                                                                 |<br><br><!-- image --><br><br>## 4.1.2 Rules for Eurobalise antenna<br><br>## 4.1.2.1 General installation rules for antennas (former 4.1.2.3)"[id="1"]<br><br>Testo Originale: "| 4.1.1 Rules for balises ......................................................................................................12                                                                                                                             | 4.1.1 Rules for balises ......................................................................................................12                                                                                                                             | 4.1.1 Rules for balises ......................................................................................................12                                                                                                                             |                                                                                                                                                |"[id="1"]</td>
+                        <td class="col-fonte">"Fonte non formattata correttamente"</td>
+                    </tr>
+        
+                </tbody>
+            </table>
+        </div>
+    </body>
+    </html>
+    

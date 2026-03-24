@@ -1,0 +1,163 @@
+
+    <!DOCTYPE html>
+    <html lang="it">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Report Risposte RAG</title>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+            
+            body { font-family: 'Inter', sans-serif; background-color: #f4f7f8; color: #333; margin: 0; padding: 40px 20px; }
+            h1 { text-align: center; color: #1e293b; margin-bottom: 40px; font-weight: 700; letter-spacing: -0.5px; }
+            .container { max-width: 1500px; margin: 0 auto; background-color: #fff; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); overflow: hidden; }
+            table { width: 100%; border-collapse: collapse; text-align: left; table-layout: fixed; }
+            th, td { padding: 20px; border-bottom: 1px solid #e2e8f0; vertical-align: top; line-height: 1.6; word-wrap: break-word; }
+            th { background-color: #f8fafc; color: #475569; font-weight: 600; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px; }
+            tr:last-child td { border-bottom: none; }
+            tr:hover { background-color: #fbfcfd; }
+            
+            /* Stili per le colonne (Totale 100%) */
+            .col-domanda { width: 15%; font-weight: 600; color: #0f172a; }
+            .col-verita { width: 20%; color: #475569; font-size: 14px; background-color: #fafafa;}
+            .col-pagina { width: 5%; text-align: center; font-weight: bold; color: #64748b; }
+            .col-rag { width: 25%; font-size: 15px; color: #1e293b; background-color: #f0fdf4; }
+            .col-fonte { width: 35%; font-size: 13px; color: #475569; font-style: italic; background-color: #f8fafc; border-left: 2px solid #cbd5e1; }
+            
+            /* Sfumatura per righe alternate */
+            tbody tr:nth-child(even) { background-color: #fcfcfc; }
+        </style>
+    </head>
+    <body>
+        <h1>📊 Report Modello RAG (Fonti Estratte)</h1>
+        <div class="container">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-domanda">Domanda</th>
+                        <th class="col-verita">Ground Truth Originale</th>
+                        <th class="col-pagina">Pag.</th>
+                        <th class="col-rag">Risposta Generata (RAG)</th>
+                        <th class="col-fonte">Testo Originale (Fonte Citata)</th>
+                    </tr>
+                </thead>
+                <tbody>
+    
+                    <tr>
+                        <td class="col-domanda">Mi elenchi tutti i possibili stati STM?</td>
+                        <td class="col-verita">No Power (NP<br>Power On (PO)<br>Configuration (CO)<br>Data Entry (DE)<br>Cold Standby (CS)<br>Hot Standby (HS)<br>Data Available (DA)<br>Failure (FA)</td>
+                        <td class="col-pagina">SS-035 46-48</td>
+                        <td class="col-rag">INFORMAZIONE NON PRESENTE</td>
+                        <td class="col-fonte">"Fonte non formattata correttamente"</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Cosa succede nello Stato STM DE? Dammi una descrizone</td>
+                        <td class="col-verita">The state DE is used by any STM that requires Specific NTC Data in order to have allthe required national information for operating the train with the STM</td>
+                        <td class="col-pagina">SS-035 47</td>
+                        <td class="col-rag">Lo stato **DE** (Data Entry) è utilizzato da qualsiasi STM che necessita dei **Specific NTC Data** per avere tutte le informazioni nazionali richieste per il funzionamento del treno. Viene inserito una sola volta durante l’avvio dell’STM. In questo stato si esegue la procedura di inserimento dei Specific NTC Data (vedi capitolo 10.7). Al termine di tale procedura, l’STM richiede lo stato **Cold Standby (CS)** alla STM Control Function. Se la procedura viene terminata senza ricevere i dati (ad esempio se viene saltata), lo stato Cold Standby viene comunque richiesto per mantenere lo stesso comportamento di sistema quando i dati specifici risultano invalidi.</td>
+                        <td class="col-fonte">""- 8.4.1.1 The state DE is used by any STM that requires Specific NTC Data in order to have all the required national information for operating the train with the STM.<br>- 8.4.1.1.1 Note: This state is only entered once at the start up process of the STM.<br>- 8.4.1.2 In  the  state  DE,  the  Specific  NTC  Data  Entry  procedure  (see  chapter  10.7)  shall  be performed.<br>- 8.4.1.3 Once the Specific NTC Data Entry procedure is terminated, the STM shall request Cold Standby state to the STM Control Function.<br>- 8.4.1.4 Note:  The  Specific  NTC  Data  Entry  procedure  can  be  terminated  without  having received the Specific NTC Data (e.g. when the Specific NTC Data Entry procedure is skipped). However, the Cold Standby state is still requested in order to have the same system behaviour when the Specific NTC Data is invalid.""</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Qual è il massimo numero di caratteri che si possono mostrare a schermo sul DMI?</td>
+                        <td class="col-verita">The maximum number of characters (coded in UTF-8 by 1 or 2 bytes) to display shall be<br>a) 40 characters for text messages in text message request.<br>b) 12 characters for button and indicator caption text in button and indicator requests</td>
+                        <td class="col-pagina">SS-035 85</td>
+                        <td class="col-rag">Il DMI può visualizzare al massimo **40 caratteri** per i messaggi di testo (la lunghezza massima è di 12 caratteri solo per i testi dei pulsanti e delle etichette).</td>
+                        <td class="col-fonte">""- 15.1.1.1 The maximum number of characters (coded in UTF-8 by 1 or 2 bytes) to display shall be<br>- a) 40 characters for text messages in text message request.<br>- b) 12 characters for button and indicator caption text in button and indicator requests""</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Quali sono le condizioni per passare dallo stato STM DA a quello FA?</td>
+                        <td class="col-verita">ETCS order “Failure”<br><br>The STM decides itself to go in FA state</td>
+                        <td class="col-pagina">SS-035 49</td>
+                        <td class="col-rag">Lo stato DA può passare allo stato FA in due situazioni previste dalla normativa:  <br>   - se lo STM riceve un ordine di transizione di stato non consentito dalla tabella delle transizioni (cioè un ordine invalido), lo STM deve impostarsi nello stato FA;  <br>   - se, dopo la modalità TR, la procedura nazionale di emergenza (National Trip Procedure) non è stata completata, l’STM viene ordinato di passare allo stato FA tramite la transizione Q16 quando la modalità TR viene abbandonata.</td>
+                        <td class="col-fonte">""9.2.1.3 Note: As long as an STM in DA state is in a National Trip Procedure in SN mode, the STM sends cyclically the 'National Trip Procedure' information to the STM Control Function in order to fulfil the timeout requirements defined in 10.3.2.4 (transitions E16 and F16). If the mode changes to TR, the STM is expected to enter CS state even if its National Trip Procedure is not finished, as the Trip procedure is handed over by ERTMS/ETCS on-board (otherwise, the STM would be ordered to FA state through transition Q16 once the TR mode is exited)."  <br><br>"9.3.1.2 If the STM receives from the ERTMS/ETCS on-board a state transition order, which is not allowed by the state transition table (9.2.1.2), then the STM shall go in FA state.""</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Qual'è la distanza minima tra il fronte del rotabile e la posizione dell'antenna Eurobalise?</td>
+                        <td class="col-verita">The antenna shall be placed such that the Reference Mark of the balise <br>antenna lies:<br>• between 2m from the front of the engine and the 1st axle<br>: The minimum value of 2m shall be ensured taking into<br>account dynamic effects of the coupling</td>
+                        <td class="col-pagina">SS-040 20</td>
+                        <td class="col-rag">La distanza minima tra il fronte del rotabile e la posizione dell'antenna Eurobalise è di **2 metri**.</td>
+                        <td class="col-fonte">""The maximum value of 12.5m has been specified to allow the use of the same antenna for both directions, on a locomotive, and to provide sufficient space to install the antenna on all different types of trains. Furthermore the aim of the minimum distance of 2m to train front is : min2m min2m - to avoid an antenna receiving a telegram from a balise energised by another antenna - to avoid a balise energised by one antenna perturbing the transmission of an adjacent antenna.""</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Cosa si intende come "last switchable balise"?</td>
+                        <td class="col-verita">The «last switchable balise» of a balise group refers to the last encountered switchable balise with regards to the balise group crossing direction.</td>
+                        <td class="col-pagina">SS-040 12</td>
+                        <td class="col-rag">Nel contesto delle balise, la “last switchable balise” è l’ultima balise commutabile incontrata lungo la direzione di attraversamento del gruppo di balise.</td>
+                        <td class="col-fonte">""- 3.3.1.4 The «last switchable balise» of a balise group refers to the last encountered switchable balise with regards to the balise group crossing direction.""</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Come si misura la distanza tra due BG consecutivi?</td>
+                        <td class="col-verita">Distance between balise groups is by definition the distance between closest balises of the two groups (i.e. between the Balise Reference Mark of the last one of the first group and the Balise Reference Mark of the first one of the second group).</td>
+                        <td class="col-pagina">SS-040 12</td>
+                        <td class="col-rag">La distanza tra due balise (BG) consecutivi si misura facendo riferimento ai “Balise Reference Marks”, ossia i segni visibili sulla superficie dell’antenna che costituiscono il punto di riferimento dell’antenna stessa. La distanza di riferimento è quella massima consentita tra balise all’interno di uno stesso gruppo, utilizzata per verificare l’assenza di ulteriori balise (eventuale balise mancante) e non va confusa con la distanza impiegata nelle informazioni di collegamento tra gruppi di balise. [1]</td>
+                        <td class="col-fonte">""## 3.3.2 Referencing antennas<br><br>- 3.3.2.1 The  reference  location  of  an  antenna  is  the  Antenna  Reference  Marks,  which  are visible signs on the surface of the antenna.<br><br>...<br><br>## 4.1.1.2 Maximum distance between balises within a group - to determine that no further balise is expected within a group (potentially missing balise).""</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Che differenza c'è tra la distanza tra due BG consecutivi e la distanza di linking?</td>
+                        <td class="col-verita">Note: This convention should not be mixed up with the distance used in the linking information (i.e. between the Balise Reference Mark of the balise with N_PIG variable = 0 of the first group and the Balise Reference Mark of the balise with N_PIG variable = 0 of the second group); see following figure [...]</td>
+                        <td class="col-pagina">SS-040 12</td>
+                        <td class="col-rag">INFORMAZIONE NON PRESENTE</td>
+                        <td class="col-fonte">"Fonte non formattata correttamente"</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Quali sono le regole di installazione per le balsie?</td>
+                        <td class="col-verita">SUBSET-036<br>❑ Section 4.2.5: Cross-talk protection<br>❑ Section 5.2 : Balise air gap interface<br>❑ Section 5.6.2 : Installation requirements for balises<br>❑ Section 5.6.3: Distance between balises<br>❑ Section 5.7: Environmental Conditions</td>
+                        <td class="col-pagina">SS-040 12</td>
+                        <td class="col-rag">Le regole di installazione delle balise prevedono diversi vincoli:<br>- **Tolleranze laterali e angolari** da rispettare secondo la sezione 5.6.2.3 di Subset‑036 [1].<br>- **Installazione in curve strette** (curve orizzontali o verticali) che deve rispettare le disposizioni della sezione 5.6.5 di Subset‑036 [1].<br>- **Configurazione dei gruppi di balise** con il rispetto del numero di balise per gruppo e l’utilizzo di gruppi singoli, come indicato nella sezione 8.3.2.1 di SUBSET‑091 [1].<br>- **Limite di balise per unità di tempo**: in un intervallo di distanza “d” (parcourso dal treno in 0,8 s alla velocità massima nominale) non devono essere rilevate più di 8 balise; 9 o più balise in tale intervallo non sono ammissibili [1].<br>- **Posizionamento rispetto al punto di arresto**: per le balise situate a un segnale con informazioni commutate, nessuna balise può essere collocata a più di 0,7 m dietro il punto operativo di arresto [1].</td>
+                        <td class="col-fonte">"```<br>## 4.1.1.8 Lateral and angular tolerances for balise installation<br>Rule<br><br>## 4.1.1.9 Rules for balise installation in narrow curves<br><br>| Rule          | Reminder: the rules of the reference below must be respected regards the installation of Eurobalises in horizontal or vertical curves.   |<br>|---------------|------------------------------------------------------------------------------------------------------------------------------------------|<br>| Reference     | Subset-036 section 5.6.5                                                                                                                 |<br>| Justification | -                                                                                                                                        |<br><br>## 4.1.1.11 Balise group configurations<br><br>| Rule          | Reminder: the rules of the reference below must be respected regards - Number of balises in each group/use of single balise groups - TSR Balise groups   |<br>|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|<br>| Reference     | SUBSET-091 - section 8.3.2.1                                                                                                                             |<br>| Justification |<br><br>## 4.1.1.6 Number of balises that can be processed per unit of time<br><br>Rule<br><br>Let 'd' be the distance run by a train at the maximum speed of the line during 0.8 s.<br><br>In  this  distance  'd',  the  number  of  encountered  balises  shall  not exceed 8.<br><br>Note: The maximum speed of the line is the nominal line speed value (engineered SSP). Tolerances due to inaccuracy of speed measurements and speed margins before brake intervention are not to be taken into account for engineering.<br><br>Reference<br><br>Limitations of SUBSET-036 - section 4.2.9 must be considered<br><br>...<br><br>| Rule          | With regards to balises at a signal containing switched information any balise located in rear of the operational stopping location shall not be located further than 0.7m in rear of the operational stopping location. |<br>|---------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|<br>```"</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Qual è lo scopo di questo subset SS-058?</td>
+                        <td class="col-verita">Lo scopo è specificare il formato dei dati usati nella comunicazione tra STM e ETCS onboard</td>
+                        <td class="col-pagina">SS-058 23</td>
+                        <td class="col-rag">Lo scopo del subset SS‑058 è definire le regole di ingegneria relative allo scambio di informazioni e alla gestione dei messaggi tra lo STM (Sistema di Trasporto Modulare) e l’ETCS a bordo. In particolare specifica le richieste di cambio stato, la trasmissione della velocità massima STM, le modalità di formattazione e allineamento dei messaggi, nonché le regole per il trattamento di pacchetti non standard, con l’obiettivo di garantire l’interoperabilità e il corretto funzionamento del sistema.</td>
+                        <td class="col-fonte">""## 3.2 Aim and purpose for a subset of engineering rules<br><br>## 3.2.1 ERTMS/ETCS engineering rules<br><br>- 3.2.1.1 The engineering rules are system-related limitations for installation of equipment, exchange of information, on-board configuration data, etc. that characterise the implementation of ERTMS subsystems.<br>- 3.2.1.2 These engineering rules provide additional constraints to the requirements stated in the SRS and other sub-level documents in order to ensure interoperability.""</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Il pacchetto STM-128 è consentito in quali stati STM?</td>
+                        <td class="col-verita">Solo DA (Data Available)</td>
+                        <td class="col-pagina">SS-058 69</td>
+                        <td class="col-rag">INFORMAZIONE NON PRESENTE</td>
+                        <td class="col-fonte">"Fonte non formattata correttamente"</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Il pacchetto STM-128 è consentito nello stato STM CS (Cold Standby)?</td>
+                        <td class="col-verita">No, solo DA (Data Available)</td>
+                        <td class="col-pagina">SS-058 69</td>
+                        <td class="col-rag">INFORMAZIONE NON PRESENTE</td>
+                        <td class="col-fonte">"Fonte non formattata correttamente"</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Il pacchetto STM-23 a cosa serve?</td>
+                        <td class="col-verita">Serve per notificare la fine e i risultati di una Test Procedure</td>
+                        <td class="col-pagina">SS-058 52</td>
+                        <td class="col-rag">Il pacchetto STM‑23 è utilizzato per segnalare la conclusione della procedura di test dell'STM, indicando la fine del test. [1]</td>
+                        <td class="col-fonte">""## 7.2.25 Packet STM-23: End of Test Procedure""</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">La variabile V_TARGET cosa identifica?</td>
+                        <td class="col-verita">Identifica la velocita target</td>
+                        <td class="col-pagina">SS-058 112</td>
+                        <td class="col-rag">La variabile **V_TARGET** identifica la velocità di destinazione, ossia la velocità target che il sistema deve raggiungere.</td>
+                        <td class="col-fonte">""|                           | V_TARGET                                                                          | 7                                                                                 | Target speed                                                                      |""</td>
+                    </tr>
+        
+                </tbody>
+            </table>
+        </div>
+    </body>
+    </html>
+    

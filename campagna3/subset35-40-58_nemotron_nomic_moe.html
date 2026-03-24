@@ -1,0 +1,163 @@
+
+    <!DOCTYPE html>
+    <html lang="it">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Report Risposte RAG</title>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+            
+            body { font-family: 'Inter', sans-serif; background-color: #f4f7f8; color: #333; margin: 0; padding: 40px 20px; }
+            h1 { text-align: center; color: #1e293b; margin-bottom: 40px; font-weight: 700; letter-spacing: -0.5px; }
+            .container { max-width: 1500px; margin: 0 auto; background-color: #fff; border-radius: 12px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); overflow: hidden; }
+            table { width: 100%; border-collapse: collapse; text-align: left; table-layout: fixed; }
+            th, td { padding: 20px; border-bottom: 1px solid #e2e8f0; vertical-align: top; line-height: 1.6; word-wrap: break-word; }
+            th { background-color: #f8fafc; color: #475569; font-weight: 600; text-transform: uppercase; font-size: 13px; letter-spacing: 0.5px; }
+            tr:last-child td { border-bottom: none; }
+            tr:hover { background-color: #fbfcfd; }
+            
+            /* Stili per le colonne (Totale 100%) */
+            .col-domanda { width: 15%; font-weight: 600; color: #0f172a; }
+            .col-verita { width: 20%; color: #475569; font-size: 14px; background-color: #fafafa;}
+            .col-pagina { width: 5%; text-align: center; font-weight: bold; color: #64748b; }
+            .col-rag { width: 25%; font-size: 15px; color: #1e293b; background-color: #f0fdf4; }
+            .col-fonte { width: 35%; font-size: 13px; color: #475569; font-style: italic; background-color: #f8fafc; border-left: 2px solid #cbd5e1; }
+            
+            /* Sfumatura per righe alternate */
+            tbody tr:nth-child(even) { background-color: #fcfcfc; }
+        </style>
+    </head>
+    <body>
+        <h1>📊 Report Modello RAG (Fonti Estratte)</h1>
+        <div class="container">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="col-domanda">Domanda</th>
+                        <th class="col-verita">Ground Truth Originale</th>
+                        <th class="col-pagina">Pag.</th>
+                        <th class="col-rag">Risposta Generata (RAG)</th>
+                        <th class="col-fonte">Testo Originale (Fonte Citata)</th>
+                    </tr>
+                </thead>
+                <tbody>
+    
+                    <tr>
+                        <td class="col-domanda">Mi elenchi tutti i possibili stati STM?</td>
+                        <td class="col-verita">No Power (NP<br>Power On (PO)<br>Configuration (CO)<br>Data Entry (DE)<br>Cold Standby (CS)<br>Hot Standby (HS)<br>Data Available (DA)<br>Failure (FA)</td>
+                        <td class="col-pagina">SS-035 46-48</td>
+                        <td class="col-rag">INFORMAZIONE NON PRESENTE</td>
+                        <td class="col-fonte">"Fonte non formattata correttamente"</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Cosa succede nello Stato STM DE? Dammi una descrizone</td>
+                        <td class="col-verita">The state DE is used by any STM that requires Specific NTC Data in order to have allthe required national information for operating the train with the STM</td>
+                        <td class="col-pagina">SS-035 47</td>
+                        <td class="col-rag">INFORMAZIONE NON PRESENTE</td>
+                        <td class="col-fonte">"Fonte non formattata correttamente"</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Qual è il massimo numero di caratteri che si possono mostrare a schermo sul DMI?</td>
+                        <td class="col-verita">The maximum number of characters (coded in UTF-8 by 1 or 2 bytes) to display shall be<br>a) 40 characters for text messages in text message request.<br>b) 12 characters for button and indicator caption text in button and indicator requests</td>
+                        <td class="col-pagina">SS-035 85</td>
+                        <td class="col-rag">Risposta: Il massimo numero di caratteri che si possono mostrare a schermo sul DMI è 40 caratteri per i messaggi di testo nelle richieste di messaggio di testo.<br>Testo Originale: "a) 40 characters for text messages in text message request." [1]</td>
+                        <td class="col-fonte">"Fonte non formattata correttamente"</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Quali sono le condizioni per passare dallo stato STM DA a quello FA?</td>
+                        <td class="col-verita">ETCS order “Failure”<br><br>The STM decides itself to go in FA state</td>
+                        <td class="col-pagina">SS-035 49</td>
+                        <td class="col-rag">Risposta: Il passaggio dallo stato DA a FA non è descritto esplicitamente nel contesto fornito. Lo stato FA (Failure) è definito come lo stato in cui l'STM non è più in grado di funzionare a causa di guasti interni o esterni, e in tale stato l'STM non invia più messaggi sul bus, tranne per segnalare lo stato FA alle funzioni ERTMS/ETCS a bordo. Tuttavia, il contesto non specifica le condizioni precise per cui si effettua la transizione da DA a FA, né se tale transizione avviene tramite un ordine del STM Control Function o in modo autonomo dall'STM a seguito di un guasto. Si nota inoltre un'eccezione al reporting dello stato FA: se il guasto impedisce il reporting stesso, potrebbe non essere possibile segnalare lo stato FA. Ma riguardo alle condizioni di ingresso nello stato FA da DA, il contesto non fornisce dettagli.<br><br>Testo Originale: "Being in this state, the STM is not able to work any more, due to internal or external reasons. - 8.8.1.2 Being in this state, the STM shall not send messages any more on the bus except to report this state to the ERTMS/ETCS on-board functions." [1]</td>
+                        <td class="col-fonte">"Fonte non formattata correttamente"</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Qual'è la distanza minima tra il fronte del rotabile e la posizione dell'antenna Eurobalise?</td>
+                        <td class="col-verita">The antenna shall be placed such that the Reference Mark of the balise <br>antenna lies:<br>• between 2m from the front of the engine and the 1st axle<br>: The minimum value of 2m shall be ensured taking into<br>account dynamic effects of the coupling</td>
+                        <td class="col-pagina">SS-040 20</td>
+                        <td class="col-rag">INFORMAZIONE NON PRESENTE</td>
+                        <td class="col-fonte">"Fonte non formattata correttamente"</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Cosa si intende come "last switchable balise"?</td>
+                        <td class="col-verita">The «last switchable balise» of a balise group refers to the last encountered switchable balise with regards to the balise group crossing direction.</td>
+                        <td class="col-pagina">SS-040 12</td>
+                        <td class="col-rag">Risposta: Il «last switchable balise» di un gruppo di balise è definito come l'ultima balise commutabile incontrata rispetto alla direzione di attraversamento del gruppo di balise.<br><br>Testo Originale: "3.3.1.4 The «last switchable balise» of a balise group refers to the last encountered switchable balise with regards to the balise group crossing direction." [1]</td>
+                        <td class="col-fonte">"Fonte non formattata correttamente"</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Come si misura la distanza tra due BG consecutivi?</td>
+                        <td class="col-verita">Distance between balise groups is by definition the distance between closest balises of the two groups (i.e. between the Balise Reference Mark of the last one of the first group and the Balise Reference Mark of the first one of the second group).</td>
+                        <td class="col-pagina">SS-040 12</td>
+                        <td class="col-rag">Risposta: La distanza tra due balise consecutive all'interno dello stesso gruppo si misura dal riferimento di marcatore al riferimento di marcatore e deve essere al massimo di 12 metri.<br><br>Testo Originale: "| Rule          | The maximum distance between two consecutive balises within the same group shall be 12 m from reference mark to reference mark.                                                                              |" [1]</td>
+                        <td class="col-fonte">"Fonte non formattata correttamente"</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Che differenza c'è tra la distanza tra due BG consecutivi e la distanza di linking?</td>
+                        <td class="col-verita">Note: This convention should not be mixed up with the distance used in the linking information (i.e. between the Balise Reference Mark of the balise with N_PIG variable = 0 of the first group and the Balise Reference Mark of the balise with N_PIG variable = 0 of the second group); see following figure [...]</td>
+                        <td class="col-pagina">SS-040 12</td>
+                        <td class="col-rag">INFORMAZIONE NON PRESENTE</td>
+                        <td class="col-fonte">"Fonte non formattata correttamente"</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Quali sono le regole di installazione per le balsie?</td>
+                        <td class="col-verita">SUBSET-036<br>❑ Section 4.2.5: Cross-talk protection<br>❑ Section 5.2 : Balise air gap interface<br>❑ Section 5.6.2 : Installation requirements for balises<br>❑ Section 5.6.3: Distance between balises<br>❑ Section 5.7: Environmental Conditions</td>
+                        <td class="col-pagina">SS-040 12</td>
+                        <td class="col-rag">Risposta: Le regole di installazione per le balsie richiedono il rispetto delle sezioni specifiche dei riferimenti SUBSET-036, incluse le sezioni 4.2.5 (protezione contro il cross-talk), 5.2 (interfaccia di aria tra balsia e antenna), 5.6.2 (requisiti di installazione per le balsie), 5.6.3 (distanza tra balsie) e 5.7 (condizioni ambientali), al fine di garantire l'interoperabilità dal punto di vista della trasmissione.<br><br>Testo Originale: "| Rule          | Reminder: the rules of the references below must be respected.                                                                                                                                                                       |<br>|---------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|<br>| Reference     | SUBSET-036  Section 4.2.5: Cross-talk protection  Section 5.2 : Balise air gap interface  Section 5.6.2 : Installation requirements for balises  Section 5.6.3: Distance between balises  Section 5.7: Environmental Conditions |<br>| Justification | The rules of the reference above are required in order to guarantee interoperability from a transmission point of view.                                                                                                              |" [1]</td>
+                        <td class="col-fonte">"Fonte non formattata correttamente"</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Qual è lo scopo di questo subset SS-058?</td>
+                        <td class="col-verita">Lo scopo è specificare il formato dei dati usati nella comunicazione tra STM e ETCS onboard</td>
+                        <td class="col-pagina">SS-058 23</td>
+                        <td class="col-rag">INFORMAZIONE NON PRESENTE</td>
+                        <td class="col-fonte">"Fonte non formattata correttamente"</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Il pacchetto STM-128 è consentito in quali stati STM?</td>
+                        <td class="col-verita">Solo DA (Data Available)</td>
+                        <td class="col-pagina">SS-058 69</td>
+                        <td class="col-rag">Risposta: Il contesto fornito non contiene informazioni sul pacchetto STM-128 o sui suoi stati consentiti. Viene menzionato solo il pacchetto STM-13 e il campo NID_STMSTATE, ma senza alcuna indicazione sugli stati in cui STM-128 è consentito.  <br>Testo Originale: "## 7.2.6 Packet STM-13: State request from STM"  <br>Testo Originale: "|                           | NID_STMSTATE                                                                                                                                            | 4                                                                                                                                                       | Current STM state                                                                                                                                       |"  <br>Testo Originale: "| Name                    | STM identity                                                                                                                                                                                  | STM identity                                                                                                                                                                                  | STM identity                                                                                                                                                                                  |"</td>
+                        <td class="col-fonte">"Fonte non formattata correttamente"</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Il pacchetto STM-128 è consentito nello stato STM CS (Cold Standby)?</td>
+                        <td class="col-verita">No, solo DA (Data Available)</td>
+                        <td class="col-pagina">SS-058 69</td>
+                        <td class="col-rag">Risposta: Sì, il pacchetto STM-128 è consentito nello stato STM CS (Cold Standby), poiché in tale stato lo STM è stato inizializzato, testato, configurato e possiede tutte le informazioni richieste per il funzionamento, anche se non è in grado di ricevere messaggi dal lato binario perché la ricezione è disattivata, il che implica che le operazioni di configurazione e di gestione dei pacchetti come STM-128 possono essere completate in precedenza o sono comunque consentite nello stato di standby freddo.<br><br>Testo Originale: "- 8.5.1.1 Being in the state CS, the STM has been initialised, tested (if required), configured and is  in  possession  of  all  required  information  for  operating,  but  is  not  able  to  receive  a message from the trackside, because the reception is turned off." [1]</td>
+                        <td class="col-fonte">"Fonte non formattata correttamente"</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">Il pacchetto STM-23 a cosa serve?</td>
+                        <td class="col-verita">Serve per notificare la fine e i risultati di una Test Procedure</td>
+                        <td class="col-pagina">SS-058 52</td>
+                        <td class="col-rag">Risposta: End of Test Procedure<br>Testo Originale: "## 7.2.25 Packet STM-23: End of Test Procedure"</td>
+                        <td class="col-fonte">"Fonte non formattata correttamente"</td>
+                    </tr>
+        
+                    <tr>
+                        <td class="col-domanda">La variabile V_TARGET cosa identifica?</td>
+                        <td class="col-verita">Identifica la velocita target</td>
+                        <td class="col-pagina">SS-058 112</td>
+                        <td class="col-rag">Risposta: V_TARGET identifica la velocità obiettivo.  <br>Testo Originale: |                           | V_TARGET                                                                          | 7                                                                                 | Target speed                                                                      | [1]</td>
+                        <td class="col-fonte">"Fonte non formattata correttamente"</td>
+                    </tr>
+        
+                </tbody>
+            </table>
+        </div>
+    </body>
+    </html>
+    
