@@ -10,6 +10,8 @@ def main():
     parser.add_argument("--md_file", required=True, help="Percorso del file Markdown di input contenente il testo.")
     parser.add_argument("--excel_in", required=True, help="Percorso del file Excel/CSV contenente le domande e la Ground Truth.")
     parser.add_argument("--excel_out", default="risposte_modello.xlsx", help="Percorso del file Excel di output da generare.")
+    # NUOVO PARAMETRO: --parti_da
+    parser.add_argument("--parti_da", type=int, default=1, help="Indice della domanda da cui partire (es. 3 per partire dalla terza domanda). Default: 1.")
     args = parser.parse_args()
 
     # 1. Lettura del file Markdown
@@ -37,35 +39,44 @@ def main():
         df_input = df_input.dropna(subset=['Domanda'])
         # Convertiamo il dataframe in una lista di dizionari per iterare facilmente
         tasks_data = df_input.to_dict('records')
-        print(f"✅ Trovate {len(tasks_data)} domande da elaborare.")
+        totale_domande = len(tasks_data)
+        print(f"✅ Trovate {totale_domande} domande nel file.")
         
     except Exception as e:
         print(f"❌ Errore nella lettura del file delle domande: {e}")
         return
 
+    # LOGICA DI FILTRAGGIO IN BASE A --parti_da
+    start_index = max(1, args.parti_da) # Evita numeri negativi o zero
+    if start_index > 1:
+        if start_index > totale_domande:
+            print(f"⚠️ Attenzione: hai chiesto di partire dalla domanda {start_index}, ma ci sono solo {totale_domande} domande. Nessuna operazione eseguita.")
+            return
+        print(f"⏭️  Salto le prime {start_index - 1} domande. Partenza dalla domanda numero {start_index}.")
+        # Tagliamo la lista per tenere solo le domande da start_index in poi (ricorda che le liste partono da 0)
+        tasks_data = tasks_data[start_index - 1:]
+
     # 3. Inizializzazione del modello RLM
     print("\n🤖 Inizializzazione del modello RLM...")
     rlm = RLM(
-        model="ollama/qwen3.5:cloud",
-        recursive_model="ollama/qwen3.5:4b",
-        max_iterations=80,
-        max_depth=4,
-        temperature=0.1
+        model="ollama/qwen3.5:9b",
+        #recursive_model="ollama/gpt-oss:120b-cloud",
+        max_iterations=50,
+        temperature=0.3
     )
-
-    rlm.repl.max_output_chars = 10_000
 
     # 4. Ciclo sequenziale sulle domande per generare le risposte
     risultati = []
     print("\n⏳ Inizio elaborazione...\n" + "=" * 80)
     
-    for i, row in enumerate(tasks_data, 1):
+    # Usiamo start_index in enumerate così stampa il numero di domanda corretto rispetto al file originale
+    for i, row in enumerate(tasks_data, start=start_index):
         task = row['Domanda']
         # Recuperiamo Risposta e Pagina (se non esistono nel file di input, mettiamo stringa vuota)
         gt_risposta = row.get('Risposta', '')
         pagina = row.get('Pagina', '')
 
-        print(f"\nDomanda {i}/{len(tasks_data)}: {task}")
+        print(f"\nDomanda {i}/{totale_domande}: {task}")
         print("-" * 80)
         
         try:
@@ -76,7 +87,7 @@ def main():
             result = f"ERRORE GENERAZIONE: {e}"
             print(f"❌ {result}")
             
-        # Salva la riga completa per l'Excel finale rispettando l'ordine delle colonne
+        # Salva la riga completa per l'Excel finale
         risultati.append({
             "Domanda": task,
             "Risposta": gt_risposta,
