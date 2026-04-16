@@ -1,3 +1,373 @@
+
+<!-- image -->
+
+- 8.6.1.1.1 Note:  In  HS  state,  when  receiving  national  trackside  information,  the  STM  treats  this information  to  be  prepared  to  take  charge  of  the  train  movement  supervision  once  it switches to Data Available state.
+- 8.6.1.2 The  STM  in  HS  state  shall  have  the  possibility  to  send  an  'STM  max  speed' (V\_STMMAX) to the ERTMS/ETCS on-board through the STM Control Function.
+- 8.6.1.2.1 Note: This 'STM max speed' is to allow the STM, for national reasons unknown to the ERTMS/ETCS on-board or ETCS Trackside, to request a given train speed at the level transition border in order to have a smooth transition.
+- 8.6.1.3 The STM in HS shall have the possibility to send an 'STM system speed' (V\_STMSYS) together with an 'STM system distance' (D\_STMSYS) to the ERTMS/ETCS on-board through the STM Control Function.
+- 8.6.1.3.1 Note:  This  'STM  system  speed'  together  with  the  'STM  system  distance'  is  sent  to allow  the  STM,  to  request  a  given  train  speed  at  a  given  position  ('STM  system distance')  before  the  level  transition  border  in  order  to  be  able  to  detect  its  national trackside.
+- 8.6.1.4 When an STM in HS state receives an order to go in CS state, the STM shall have the possibility to close any connection except with STM Control Function.
+
+## 8.7 Data Available (DA)
+
+- 8.7.1.1 In DA state, an STM is responsible for the train movement supervision, according to the received national trackside information.
+- 8.7.1.2 When an STM in DA state receives an order to go in CS state, the STM shall have the possibility to close any connection except with STM Control Function.
+
+## 8.8 Failure (FA)
+
+- 8.8.1.1 Being in this state, the STM is not able to work any more, due to internal or external reasons.
+- 8.8.1.2 Being in this state, the STM shall not send messages any more on the bus except to report this state to the ERTMS/ETCS on-board functions.
+
+<!-- image -->
+
+## 9. STM MANAGER SYSTEM - REQUIREMENTS ON STM
+
+## 9.1 Scope
+
+  9.1.1.1 The scope of this chapter is to define how the STM handles its state.
+
+## 9.2 STM States transitions table
+
+## 9.2.1.1 Transitions table for STM
+
+  | NP   | < 15      | < 15      | < 15      | < 15      | < 15      | < 15      | < 15   |
+  |------|-----------|-----------|-----------|-----------|-----------|-----------|--------|
+  | 1 >  | PO        |           |           |           |           |           |        |
+  |      | 2 >       | CO        |           |           |           |           |        |
+  |      |           | 3 >       | DE        |           |           |           |        |
+  |      |           | 4a >      | 4a >      | CS        | < 4a      | < 4a < 4b |        |
+  |      |           |           |           | 6 >       | HS        |           |        |
+  |      |           |           |           | 9 >       | 9 >       | DA        |        |
+  |      | 16 > 17 > | 16 > 17 > | 16 > 17 > | 16 > 17 > | 16 > 17 > | 16 > 17 > | FA     |
+
+## 9.2.1.2 Transitions conditions table
+
+  9.2.1.2.1 Note:  This  table  only  contains  the  event(s)  that  triggers  the  transition.  It  does  not describe the reasons why this(these) event(s) happens. ETCS orders referred to below are described in chapter 10.3.2.
+
+  | Condition Id   | Content of the conditions                                                                                              |
+  |----------------|------------------------------------------------------------------------------------------------------------------------|
+  | 1              | STM is powered on                                                                                                      |
+  | 2              | ETCS order 'Configuration'                                                                                             |
+  | 3              | ETCS order 'Data Entry'                                                                                                |
+  | 4a             | ETCS unconditional order 'Cold Standby'                                                                                |
+  | 4b             | (ETCS conditional order 'Cold Standby' has been received) AND (STM does not or no more report National Trip Procedure) |
+  | 5              | intentionally deleted                                                                                                  |
+  | 6              | ETCS order 'Hot Standby'                                                                                               |
+  | 7              | intentionally deleted                                                                                                  |
+  | 8              | intentionally deleted                                                                                                  |
+  | 9              | ETCS order 'Data Available'                                                                                            |
+
+  © This document has been developed and released by UNISIG
+
+<!-- image -->
+
+  |   Condition Id | Content of the conditions                |
+  |----------------|------------------------------------------|
+  |             10 | intentionally deleted                    |
+  |             11 | intentionally deleted                    |
+  |             12 | intentionally deleted                    |
+  |             13 | intentionally deleted                    |
+  |             14 | intentionally deleted                    |
+  |             15 | STM is powered off                       |
+  |             16 | ETCS order 'Failure'                     |
+  |             17 | The STM decides itself to go in FA state |
+
+- 9.2.1.3 Note: As long as an STM in DA state is in a National Trip Procedure in SN mode, the STM  sends  cyclically  the  'National  Trip  Procedure'  information  to  the  STM  Control Function in order to fulfil the timeout requirements defined in 10.3.2.4 (transitions E16 and F16). If the mode changes to TR, the STM is expected to enter CS state even if its National  Trip  Procedure  is  not  finished,  as  the  Trip  procedure  is  handed  over  by ERTMS/ETCS  on-board  (otherwise,  the  STM  would  be  ordered  to  FA  state  through transition Q16 once the TR mode is exited).
+
+## 9.3 General STM requirements
+
+- 9.3.1.1 The STM antenna shall not energise trackside equipment, and shall not read trackside data, and shall not transmit data to trackside, except:
+- a) in HS or DA state,
+- b) for test purpose.
+- 9.3.1.2 If the STM receives from the ERTMS/ETCS on-board a state transition order, which is not allowed by the state transition table (9.2.1.2), then the STM shall go in FA state.
+- 9.3.1.3 The STM  shall report its NID\_STM  on  all point-to-point connections with the ERTMS/ETCS on-board:
+- a) intentionally deleted
+- b) with each transmitted application message from the STM to the ERTMS/ETCS onboard function or DMI channel.
+- 9.3.1.4 The  STM  shall  report  its  current  state  on  all  point-to-point  connections  with  the ERTMS/ETCS on-board:
+- a) intentionally deleted
+- b) with each transmitted application message from the STM to the ERTMS/ETCS onboard function or DMI channel, and
+- c)  whenever  the  STM  state  is  changed,  while  the  connection  to  the  respective ERTMS/ETCS on-board function or DMI channel is established.
+
+<!-- image -->
+
+  9.3.1.4.1 Exception: The FA state shall be reported if possible. Due to a failure of the STM itself it may not be possible to report the FA state.
+
+  © This document has been developed and released by UNISIG
+
+<!-- image -->
+
+## 10. STM CONTROL FUNCTION
+
+## 10.1 General requirements
+
+- 10.1.1.1 It  shall  be possible to configure the ERTMS/ETCS on-board equipment with the list of STMs installed on-board.
+- 10.1.1.2 The STM Control Function shall maintain a list of 'available' STMs, which includes all STMs  that  have  an  established  connection  to  the  STM  Control  Function  and  report either CS, HS or DA state.
+- 10.1.1.3 Level  NTC  X  shall  be  considered  as  'Available  for  use'  for  level  transition  (see  [1] paragraph 5.10.2.4.1) if the STM X associated to this level is available.
+- 10.1.1.4 The STM Control Function shall send to the STM the following information when the connection to the STM is established:
+- a) The ERTMS/ETCS on-board functions that are available
+- b) The ETCS bus address of all available ERTMS/ETCS on-board functions
+- c)  The safety level of all available ERTMS/ETCS on-board functions (see 6.2)
+- 10.1.1.4.1  Note: Only Juridical Data and DMI channels 2, 3 &amp; 4 can be marked as not available.
+- 10.1.1.5 The STM Control Function shall inform the STM about the active DMI channel
+- a) whenever the active DMI channel changes,
+- b) whenever the connection to STM Control Function is established.
+
+## 10.2 Association of STM X to Level NTC X
+
+- 10.2.1.1 The ERTMS/ETCS on-board shall be configurable with a look-up table that gives the correspondence  between  NID\_NTC  values  and  the  NID\_STM  values  of  the  STM(s) fitted  on-board.  For  each  NID\_NTC  value  within  this  look-up  table,  a  list  of  one  or several NID\_STM values shall be configured, with a priority order.
+- 10.2.1.1.1  Note: A National System can cover the functionalities of other National Systems having their  own  NID\_NTC  values.  For  that  case,  the  look-up  table  is  needed  to  map  the NID\_NTC  values  corresponding  to  these  encapsulated  National  Systems  to  the NID\_STM value(s) of the STM(s) fitted on-board supporting them. But an entry in the look-up  table  is  not  needed  for  the  case  there  is  a  one-to-one  relation  between NID\_NTC value and NID\_STM value.
+- 10.2.1.1.2  Throughout this document, 'STM X' stands for 'STM associated to Level NTC X'. This STM is not necessarily fitted on-board.
+- 10.2.1.2 If  Level  NTC  X  (defined  by  its  NID\_NTC)  is  not  already  associated  to  an  STM,  the ERTMS/ETCS on-board shall associate this Level NTC X to STM X as follows:
+- a) When a level transition order to Level NTC X is accepted,
+
+  © This document has been developed and released by UNISIG
+
+<!-- image -->
+
+  the STM X shall be the STM which NID\_STM is equal to NID\_NTC, if the level transition  order  is  received  from  a  trackside  constituent  with  ETCS  system version  strictly  lower  than  2.0  or  if  the  look-up  table  does  not  contain  the NID\_NTC value of Level NTC X.
+
+  Otherwise  the  STM  X  shall  be  the  STM  having  the  highest  priority  among  the available STMs linked to the NID\_NTC value in the look-up table. If there is no available STM linked to this NID\_NTC value, the STM X shall be the STM having the highest priority among the STMs linked to this NID\_NTC value.
+
+- b) When the ERTMS/ETCS on-board receives airgap data to be transmitted to an STM with the NID\_NTC value of Level NTC X, the STM X shall be associated as for the level transition.
+- c)  When the Level NTC X is selected/validated by driver,
+
+  the STM X shall be the STM which NID\_STM is equal to NID\_NTC, if the look-up table does not contain the NID\_NTC value of Level NTC X.
+
+  Otherwise,  the  STM  X  shall  be  the  STM  having  the  highest  priority  among  the available STMs linked to this NID\_NTC value in the look-up table. If there is no available STM linked to this NID\_NTC value, then the STM X shall be the STM having the highest priority  among the connected STMs linked to this NID\_NTC value and that are not considered as failed or seen as isolated. Otherwise, the STM X shall be the STM having the highest priority among the STMs linked to this NID\_NTC value.
+
+- 10.2.1.3 The association between a Level NTC X and an STM X shall be kept until the Level NTC X is left  after  having  been  entered,  or  until  the  Stand-By  or  No  Power  mode  is entered.
+- 10.2.1.3.1  Note: If STM X associated to the current Level NTC X is no more available, it remains associated to Level NTC X until one of these conditions is fulfilled, even if another STM supporting NTC X is available. This avoids that there is a change of active STM that is neither due to a level transition from trackside, nor due to a driver level selection/validation.
+
+## 10.3 STM MANAGER SYSTEM
+
+## 10.3.1 Scope
+
+  10.3.1.1 The present chapter does not specify the whole STM Control Function, but only the part of the STM Control Function that manages the states of the connected STM(s).
+
+## 10.3.2 State transition orders
+
+- 10.3.2.1 The STM Control Function STM state order table is a table that lists all the events that lead to a state order given by the STM Control Function to the STM.
+
+<!-- image -->
+
+  10.3.2.2 STM state order table (ERTMS/ETCS on-board STM Control Function)
+
+  | NP         | < A15                                           | < A15                                           | < A15                                           | < A15                                                 | < A15                                                 | < A15                                                            | < A15   |
+  |------------|-------------------------------------------------|-------------------------------------------------|-------------------------------------------------|-------------------------------------------------------|-------------------------------------------------------|------------------------------------------------------------------|---------|
+  | A1 >       | PO                                              | < A1                                            | < A1                                            | < A1                                                  | < A1                                                  | < A1                                                             | < A1    |
+  |            | A2 >                                            | CO                                              |                                                 |                                                       |                                                       |                                                                  |         |
+  |            |                                                 | A3 >                                            | DE                                              |                                                       |                                                       |                                                                  |         |
+  |            |                                                 | A4a >                                           | A4a >                                           | CS                                                    | < C4a < E4a < G4a < H4a < I4a < J4a                   | < B4a < B4b < I4a < A4b < E4a < K4a < L4a                        |         |
+  |            |                                                 |                                                 |                                                 | A6 > B6 >                                             | HS                                                    |                                                                  |         |
+  |            |                                                 |                                                 |                                                 | A9>                                                   | A9 >                                                  | DA                                                               |         |
+  | A17 > B16> | A16 > B16 > C16 > H16 > I16 > L16 > P16 > A17 > | A16 > B16 > C16 > H16 > I16 > O16 > P16 > A17 > | A16 > B16 > C16 > H16 > I16 > O16 > P16 > A17 > | A16 > B16 > C16 > D16 > H16 > N16 > O16 > P16 > A17 > | A16 > B16 > C16 > D16 > H16 > N16 > O16 > P16 > A17 > | A16 > B16 > C16 > E16 > F16 > H16 > N16 > O16 > P16 > Q16> A17 > | FA      |
+
+  10.3.2.3
+
+  The state indicated in table 10.3.2.2 corresponds to the last state report received from the STM or to FA state if an FA state order has been sent since the reception of the last state report. The STM Control Function shall consider the STM to be in NP when it has not received any state report from the STM.
+
+  STM  state  order  conditions  table  applicable  to  STM  X,  associated  to  Level  NTC  X
+
+  10.3.2.4 (ERTMS/ETCS on-board STM Control Function)
+
+  | Condition Id   | Content of the conditions                                                 |
+  |----------------|---------------------------------------------------------------------------|
+  | A1             | (STM X connects to the STM Control Function) AND (STM X reports PO state) |
+  | A2             | ('Request CO state' received from STM X)                                  |
+
+  © This document has been developed and released by UNISIG
+
+<!-- image -->
+
+  | Condition Id   | Content of the conditions                                                                                                                                                                                                                              |
+  |----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+  | A3             | ('Request DE state' received from STM X) AND (ETCS Train Data is validated)                                                                                                                                                                            |
+  | A4a            | ('Request CS state' received from STM X)                                                                                                                                                                                                               |
+  | B4a            | (ERTMS/ETCS on-board performs a level transition ordered by the trackside from Level NTC X to Level 0, 1, 2, 3)                                                                                                                                        |
+  | C4a            | (announcement for a transition to Level NTC X is stored) AND (STM X reports HS state) AND (a level transition order to Level NTC Y is received before the transition to Level NTC X) AND (STM X is different from the STM Y associated to Level NTC Y) |
+  | B4b            | (The driver manually changes the level from Level NTC X to Level NTC Y) AND (STM X is different from the STM Y associated to Level NTC Y)                                                                                                              |
+  | E4a            | (ETCS mode changes to SB)                                                                                                                                                                                                                              |
+  | G4a            | (STM X reports 'HS state') AND (no transition to any level associated to STM X for further location is stored on-board) AND (Override function is not active) AND (ETCS level is different from any level associated to STM X)                         |
+  | H4a            | (ETCS mode is SB) AND (No cab is active)                                                                                                                                                                                                               |
+  | I4a            | (ETCS mode changes to SH)                                                                                                                                                                                                                              |
+  | J4a            | (announcement for a transition to Level NTC X is stored) AND (STM X reports HS state) AND (a level transition order to Level 0, 1, 2 or 3 is received before the transition to Level NTC X)                                                            |
+  | K4a            | (The driver manually changes the level from Level NTC X to Level 0, 1, 2 or 3)                                                                                                                                                                         |
+  | L4a            | (ETCS mode changes to TR)                                                                                                                                                                                                                              |
+  | A4b            | (ERTMS/ETCS on-board performs a transition ordered by the trackside from Level NTC X to Level NTC Y) AND (STM X is different from the STM Y associated to Level NTC Y)                                                                                 |
+  | A6             | (A transition to Level NTC X for a further location is stored on-board) AND (STM X reports CS state) AND (no other STM reports HS state)                                                                                                               |
+  | B6             | (ETCS mode is SB) AND (Cab is active) AND (valid level of the ERTMS/ETCS on-board is Level NTC X) AND (STM X reports CS state) AND (no other STM reports HS state)                                                                                     |
+  | A9             | (level of the ERTMS/ETCS on-board is Level NTC X) AND (STM X reports CS or HS state) AND (no other STM reports DA state) AND (ETCS mode is SN, SL or NL)                                                                                               |
+  | A15            | (the ERTMS/ETCS on-board equipment is NOT powered)                                                                                                                                                                                                     |
+  | A16            | (the STM Control Function receives from STM X a state request which is not allowed by the state transition table)                                                                                                                                      |
+  | B16            | (STM X reports a state it must not be in according to table 9.2.1.1)                                                                                                                                                                                   |
+  | C16            | (the STM Control Function has sent a state transition order except 'DA state transition order' and except 'conditional CS state transition order') AND (STM X does not report the required state within a maximum delay time of 10 seconds)            |
+
+  © This document has been developed and released by UNISIG
+
+<!-- image -->
+
+  | Condition Id   | Content of the conditions                                                                                                                                                                                                                                                                                           |
+  |----------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+  | D16            | (the STM Control Function has sent a 'DA state transition order') AND (STM X does not report the required state within a maximum delay time of 5 seconds)                                                                                                                                                           |
+  | E16            | (the STM Control Function has sent a 'conditional CS state transition order') AND (STM X does not report CS state or send a 'National Trip Procedure' information within a maximum delay time of 10 seconds)                                                                                                        |
+  | F16            | (the STM Control Function has sent a 'conditional CS state transition order') AND (the STM Control Function has already received a 'National Trip Procedure' information from STM X) AND (STM X does not report CS state or send a 'National Trip Procedure' information within a maximum delay time of 10 seconds) |
+  | H16            | (a final disconnection between the ERTMS/ETCS on-board STM Control Function and STM X was detected (see [3] and [2]))                                                                                                                                                                                               |
+  | I16            | (The ERTMS/ETCS on-board performs a transition ordered by trackside to Level NTC X) AND (STM X is not available)                                                                                                                                                                                                    |
+  | L16            | (STM X has not yet sent the Specific NTC Data Need) AND (STM X requests CO state)                                                                                                                                                                                                                                   |
+  | N16            | (The timeout TrainDataView_STM_Response_Timeout for STM X has expired)                                                                                                                                                                                                                                              |
+  | O16            | (The timeout TrainDataEntry_STM_Response_Timeout for STM X has expired)                                                                                                                                                                                                                                             |
+  | P16            | (A safety-related information has not been transmitted to STM because of disconnection)                                                                                                                                                                                                                             |
+  | Q16            | ('National Trip Procedure' is active) AND (STM X reports again 'National Trip Procedure' information) AND (the current ETCS mode is PT or UN)                                                                                                                                                                       |
+  | A17            | (STM X reports FA state)                                                                                                                                                                                                                                                                                            |
+
+  10.3.2.5 Note: The delay is shorter for transition to DA state because this transition is assumed as the most critical one from a safety aspect.
+
+- 10.3.2.6
+
+  When the conditions to change the STM state within the STM Control Function are valid according to 10.3.2.2 and 10.3.2.4, the STM  Control Function shall send the corresponding state transition order to STM X.
+
+  10.3.2.6.1  Exception 1: The STM Control Function shall not send an order for NP or PO state.
+
+  10.3.2.6.2  Exception 2: The STM Control Function shall not send an order for FA state if the STM has reported FA state (transition A17).
+
+  10.3.2.7
+
+  When the state transition  order  is  going  to  CS  state,  the  STM  Control  Function  shall send  an  'unconditional  order  CS  state'  for  the  transitions  A4a,  B4a,  C4a,  E4a,  G4a, H4a, I4a, J4a, K4a and L4a, and a 'conditional order CS state' for the transitions A4b and B4b.
+
+  10.3.2.8 Note about Q16 condition: The Trip mode is entered if the STM X is in National Trip Procedure when a transition to level 0, 1, 2 or 3 occurs. The National Trip Procedure
+
+<!-- image -->
+
+  may still be reported after this transition in case the STM has been ordered to CS with a conditional order due to a previous level transition from NTC X to NTC Y.
+
+## 10.3.3 Requirements linked to state transition orders and state reports
+
+- 10.3.3.1 The  STM  Control  Function  shall  not  evaluate  the  state  transition  order  conditions, except conditions to FA state, if this STM has not reported the state corresponding to the last state transition order.
+- 10.3.3.2 An STM is considered as active by the ERTMS/ETCS on-board from the moment it has sent the DA state order to the STM until it sends another state order to this STM (except 'conditional CS state transition order') or receives a state report different from DA from this STM.
+- 10.3.3.3 The  STM  Control  Function  shall  command  the  emergency  brake  from  the  moment  a 'conditional  CS  state  transition  order'  has  been  sent  to  a  STM  and  this  STM  is  in National Trip Procedure, up to the moment this STM reports CS state, or is considered as failed and the train reaches standstill.
+- 10.3.3.3.1  Note: This brake command avoids that the train could run untimely without supervision, in case the active STM does not send a brake command but still sends its National Trip Procedure which delays the activation of the STM of the newly entered area.
+- 10.3.3.4 The STM Control Function shall apply the emergency brake when the level is NTC X and the mode is SN and STM X is known as installed on-board but not available.
+- 10.3.3.5 Exception: the brake shall not be applied in case the STM X is known to be isolated, through the corresponding input on the Train Interface.
+- 10.3.3.6 The emergency brake application shall be released by the STM Control Function when
+- a) the STM X has established the connection to the STM Control Function after a nonfinal disconnection and the reported STM X state is DA,
+- b) or the level changes to Level 0, 1, 2, 3,
+- c)  or the level changes to a Level NTC Y that is not associated to STM X,
+- d) or the mode SN is left with no change of level,
+- e) or the dedicated input on the Train Interface informs the ERTMS/ETCS on-board that the STM X is isolated.
+- 10.3.3.7 The ERTMS/ETCS on-board shall accept the reconnection of an STM not considered as in FA state or reporting PO state, except in case of final disconnection on Safety Layers.
+- 10.3.3.8 The STM Control Function shall inform the driver that the STM X is not available while all of the following conditions are fulfilled
+- -the level is NTC X,
+- -and (the mode is SN) or (the mode is NL and has been so for at least 5s),
+- -and STM X is known as installed on-board but not available,
+
+<!-- image -->
+
+- -and STM X is not known to be isolated through the corresponding input on the Train Interface.
+
+  10.3.3.8.1  Note:  the  5s  delay  on  the  information  to  the  driver  is  required  because  the  STM  X requests to enter in CS state only after the mode has changed to NL.
+
+## 10.4 ETCS data
+
+  10.4.1.1 The ETCS data transmitted by the ERTMS/ETCS on-board to the STMs shall include a subset of the ETCS Train Data (defined in [1]), as listed below:
+
+- a) Train category(ies)
+- b) Train length
+- c)  Traction / brake parameters
+- d) Maximum train speed
+- e) Loading gauge
+- f)  Axle load category
+- g) Traction system(s) accepted by the engine
+- h) Train fitted with airtight system
+9. 10.4.1.2 The ETCS data transmitted by the ERTMS/ETCS on-board to the STMs shall include a subset of the ETCS Train Data entry input fields (defined in [9]), as listed below:
+- a) Train Type, if applicable for the train
+11. 10.4.1.3 Note:  Extra  data  for  the  available  STMs  are  handled  in  the  Specific  NTC  Data  Entry procedure see chapter 10.7.
+12. 10.4.1.4 The traction / brake parameters shall include:
+- a) Equivalent brake build up time for full service brake for the combination of none of the special brakes being used
+- b) Equivalent brake build up time for emergency brake for the combination of none of the special brakes being used
+- c)  Traction cut off time
+- d) Brake position
+- e) Brake percentage, if applicable for the train
+18. 10.4.1.5 The ETCS data transmitted by the ERTMS/ETCS on-board to the STMs shall include a subset of ETCS Additional Data (defined in [1]) as listed below:
+- a) Train Running Number
+- b) ETCS identity
+- c)  Adhesion factor
+- d) Date and Time (UTC Time)
+
+  © This document has been developed and released by UNISIG
+
+<!-- image -->
+
+- 10.4.1.6 The ETCS data transmitted by the ERTMS/ETCS on-board to the STMs shall include the ETCS National / Default Values (defined in [1])
+- 10.4.1.7 The STM Control Function shall transmit the subset of valid ETCS Train Data when the ETCS Train Data is validated.
+- 10.4.1.7.1  Note: ETCS Train Data could be changed and validated from sources different from the driver if acquired from ERTMS/ETCS on-board external sources.
+- 10.4.1.8 The STM Control Function shall transmit the valid ETCS Additional Data
+- a) when the STM has entered into Configuration (CO) state, and
+- b) when the valid ETCS Additional Data except date / time has changed.
+- 10.4.1.9 The  STM  Control  Function  shall  transmit  the  currently  used  ETCS  National  /  Default Values
+- a) when the STM has entered into Configuration (CO) state, and
+- b) when the currently used ETCS National Values have changed (this also includes the case when the National Values are reset to the Default Values).
+
+## 10.5 ETCS status data
+
+- 10.5.1.1 The STM Control Function shall send the  ETCS status data consisting of the current ETCS mode and level (defined in [1]):
+- a) To all connected STMs whenever the ETCS mode or level changes.
+- b) To any STM when the connection to the STM Control Function is established.
+
+## 10.6 Language used to display information to the driver
+
+- 10.6.1.1 The STM Control Function shall transmit the language used to display information to the driver:
+- a) To all connected STMs whenever the language is changed,
+- b) To any STM when the connection to the STM Control Function is established.
+
+## 10.7 Specific NTC Data Entry
+
+## 10.7.1 Definitions
+
+- 10.7.1.1 The 'Specific NTC Data' are the national data that need to be requested to the driver.
+- 10.7.1.2 The STM may use the transmitted ETCS data: ETCS Train Data, ETCS Additional Data and ETCS National Values in order to reduce the entry of 'Specific NTC Data' by the driver.
+- 10.7.1.3 All  'Specific NTC Data' used by all the different STMs are assigned a unique identity made of NID\_STM and Data Identifier.
+
+  © This document has been developed and released by UNISIG
+
+<!-- image -->
+
+- 10.7.1.4 The process to deliver those 'Specific NTC Data' to the STM is called 'Specific NTC Data Entry'.
+- 10.7.1.4.1  Note:  Specific  NTC  Data  Entry  is  possible  at  start-up  and  later  on  during  mission through the Train Data Entry procedure.
+
+## 10.7.2 Responsibilities
+
+- 10.7.2.1 The ERTMS/ETCS on-board equipment is responsible for the dialogue with the driver during the Specific NTC Data Entry/Validation process, for checking the technical range checks (if configured on-board) and for the transmission of the Specific NTC Data after the driver's validation.
+- 10.7.2.2 The  STM  is  responsible  for checking  the content (e.g. range, spares, internal dependency of parameters) of the data. The STM can be exempted of technical range checks if those are configured in the ERTMS/ETCS on-board equipment.
+
+## 10.7.3 General requirements
+
+- 10.7.3.1 The ERTMS/ETCS on-board equipment shall offer the possibility to the driver to skip the Specific NTC Data Entry for a STM.
+- 10.7.3.2 The ETCS Train Data as well as the Specific NTC Data might become invalid within the STM at any time due to national requirements. In this case, the STM may request the data from the ETCS by sending the 'Specific NTC Data Need'.
+- 10.7.3.3 Specific NTC Data can be or become invalid, because:
+- a) the  ETCS  Train  Data  Entry/Specific  NTC  Data  Entry  procedure  has  not  yet  been performed or has been aborted, or
+- b) the driver has skipped the Specific NTC Data Entry for this STM before the STM has sent the 'End of Specific NTC Data Entry' to the ERTMS/ETCS on-board, or
+- c)  the  ETCS Train Data Entry procedure has already been performed by the time the STM has entered  into  CO  state,  e.g.  the  STM  has  been  powered  on  or  restarted during train mission, or
+- d) the  ETCS  Train  Data  has  changed  from  sources different  from  the  driver  and  this change impacts the validity status of the Specific  NTC Data, according to national rules, or
+- e) because of STM internal function, e.g. national shunting.
+- 10.7.3.4 When the ERTMS/ETCS on-board receives the 'Specific NTC Data Need' while in FS, LS,  SR,  OS,  UN,  TR,  PT  and  SN  modes,  it  shall  inform  the  driver  that  the  national system needs data.
+- 10.7.3.5 The ERTMS/ETCS on-board shall delete this information to the driver when the driver initiates the Train Data entry procedure or when the corresponding STM is considered as failed or when this STM is known to be isolated by TIU 'NTC isolation status' input data.
+
+<!-- image -->
+
+- 10.7.3.6 The  STM  requests  its  Specific  NTC  Data  with  a  'Specific  NTC  Data  Entry  request' which  shall  include  for  each  Specific  NTC  Data,  the  following  information:  the  label, optionally a default value, and optionally values for a dedicated keyboard.
+- 10.7.3.7 Note: Unless values for a dedicated keyboard are provided or the type of keyboard is configured on-board, an alphanumeric keyboard will by default be used (see document ref [9]).
+- 10.7.3.8 It shall be possible to configure in the ERTMS/ETCS on-board the following parameters for any STM:
+- 1) The window titles for the NTC data entry, the NTC data validation and the NTC data view windows
+- 2) For each Specific NTC Data Identifier not using a dedicated keyboard:
+- a)  The type of keyboard amongst numeric, enhanced numeric and alphanumeric
+- b) If  the  type  of  keyboard  is  numeric  or  enhanced  numeric,  whether  leading zeros have to be kept and sent to the STM
+- c) The  allowed  minimum  and  maximum  value,  that  shall  be  used  by  the ERTMS/ETCS on-board with a technical range check
+- 10.7.3.9 By  analogy  to  the  modification/revalidation  of  ETCS  Train  data,  the  [1]  requirements 3.14.1.7.3,  3.18.3.3.1  regarding  the  brake  command/release  when  a  movement  is detected  while  modifying  or  revalidating  the  Train  Data  in  normal  operation  after  the start of mission shall also apply for the NTC data modification/revalidation.
+
+## 10.7.4 Specific NTC Data Entry procedure
+
+- 10.7.4.1 As soon as the ETCS Train Data is validated by the driver and if the connected STM is in CO, DE, CS, HS or DA state, the ERTMS/ETCS on-board shall indicate to the STM the beginning of its Specific NTC Data Entry procedure by sending the START flag.
+- 10.7.4.2 The ETCS Train Data shall be sent immediately after the START flag.
 ## 3. GENERAL
 
 ## 3.1 References
@@ -419,376 +789,6 @@ Figure 5  Bad version number disconnection sequence chart
 ## 8.6 Hot Standby (HS)
 
 - 8.6.1.1 Being in the state HS, the STM shall be able to process the information from or to the national trackside.
-
-<!-- image -->
-
-- 8.6.1.1.1 Note:  In  HS  state,  when  receiving  national  trackside  information,  the  STM  treats  this information  to  be  prepared  to  take  charge  of  the  train  movement  supervision  once  it switches to Data Available state.
-- 8.6.1.2 The  STM  in  HS  state  shall  have  the  possibility  to  send  an  'STM  max  speed' (V\_STMMAX) to the ERTMS/ETCS on-board through the STM Control Function.
-- 8.6.1.2.1 Note: This 'STM max speed' is to allow the STM, for national reasons unknown to the ERTMS/ETCS on-board or ETCS Trackside, to request a given train speed at the level transition border in order to have a smooth transition.
-- 8.6.1.3 The STM in HS shall have the possibility to send an 'STM system speed' (V\_STMSYS) together with an 'STM system distance' (D\_STMSYS) to the ERTMS/ETCS on-board through the STM Control Function.
-- 8.6.1.3.1 Note:  This  'STM  system  speed'  together  with  the  'STM  system  distance'  is  sent  to allow  the  STM,  to  request  a  given  train  speed  at  a  given  position  ('STM  system distance')  before  the  level  transition  border  in  order  to  be  able  to  detect  its  national trackside.
-- 8.6.1.4 When an STM in HS state receives an order to go in CS state, the STM shall have the possibility to close any connection except with STM Control Function.
-
-## 8.7 Data Available (DA)
-
-- 8.7.1.1 In DA state, an STM is responsible for the train movement supervision, according to the received national trackside information.
-- 8.7.1.2 When an STM in DA state receives an order to go in CS state, the STM shall have the possibility to close any connection except with STM Control Function.
-
-## 8.8 Failure (FA)
-
-- 8.8.1.1 Being in this state, the STM is not able to work any more, due to internal or external reasons.
-- 8.8.1.2 Being in this state, the STM shall not send messages any more on the bus except to report this state to the ERTMS/ETCS on-board functions.
-
-<!-- image -->
-
-## 9. STM MANAGER SYSTEM - REQUIREMENTS ON STM
-
-## 9.1 Scope
-
-9.1.1.1 The scope of this chapter is to define how the STM handles its state.
-
-## 9.2 STM States transitions table
-
-## 9.2.1.1 Transitions table for STM
-
-| NP   | < 15      | < 15      | < 15      | < 15      | < 15      | < 15      | < 15   |
-|------|-----------|-----------|-----------|-----------|-----------|-----------|--------|
-| 1 >  | PO        |           |           |           |           |           |        |
-|      | 2 >       | CO        |           |           |           |           |        |
-|      |           | 3 >       | DE        |           |           |           |        |
-|      |           | 4a >      | 4a >      | CS        | < 4a      | < 4a < 4b |        |
-|      |           |           |           | 6 >       | HS        |           |        |
-|      |           |           |           | 9 >       | 9 >       | DA        |        |
-|      | 16 > 17 > | 16 > 17 > | 16 > 17 > | 16 > 17 > | 16 > 17 > | 16 > 17 > | FA     |
-
-## 9.2.1.2 Transitions conditions table
-
-9.2.1.2.1 Note:  This  table  only  contains  the  event(s)  that  triggers  the  transition.  It  does  not describe the reasons why this(these) event(s) happens. ETCS orders referred to below are described in chapter 10.3.2.
-
-| Condition Id   | Content of the conditions                                                                                              |
-|----------------|------------------------------------------------------------------------------------------------------------------------|
-| 1              | STM is powered on                                                                                                      |
-| 2              | ETCS order 'Configuration'                                                                                             |
-| 3              | ETCS order 'Data Entry'                                                                                                |
-| 4a             | ETCS unconditional order 'Cold Standby'                                                                                |
-| 4b             | (ETCS conditional order 'Cold Standby' has been received) AND (STM does not or no more report National Trip Procedure) |
-| 5              | intentionally deleted                                                                                                  |
-| 6              | ETCS order 'Hot Standby'                                                                                               |
-| 7              | intentionally deleted                                                                                                  |
-| 8              | intentionally deleted                                                                                                  |
-| 9              | ETCS order 'Data Available'                                                                                            |
-
-© This document has been developed and released by UNISIG
-
-<!-- image -->
-
-|   Condition Id | Content of the conditions                |
-|----------------|------------------------------------------|
-|             10 | intentionally deleted                    |
-|             11 | intentionally deleted                    |
-|             12 | intentionally deleted                    |
-|             13 | intentionally deleted                    |
-|             14 | intentionally deleted                    |
-|             15 | STM is powered off                       |
-|             16 | ETCS order 'Failure'                     |
-|             17 | The STM decides itself to go in FA state |
-
-- 9.2.1.3 Note: As long as an STM in DA state is in a National Trip Procedure in SN mode, the STM  sends  cyclically  the  'National  Trip  Procedure'  information  to  the  STM  Control Function in order to fulfil the timeout requirements defined in 10.3.2.4 (transitions E16 and F16). If the mode changes to TR, the STM is expected to enter CS state even if its National  Trip  Procedure  is  not  finished,  as  the  Trip  procedure  is  handed  over  by ERTMS/ETCS  on-board  (otherwise,  the  STM  would  be  ordered  to  FA  state  through transition Q16 once the TR mode is exited).
-
-## 9.3 General STM requirements
-
-- 9.3.1.1 The STM antenna shall not energise trackside equipment, and shall not read trackside data, and shall not transmit data to trackside, except:
-- a) in HS or DA state,
-- b) for test purpose.
-- 9.3.1.2 If the STM receives from the ERTMS/ETCS on-board a state transition order, which is not allowed by the state transition table (9.2.1.2), then the STM shall go in FA state.
-- 9.3.1.3 The STM  shall report its NID\_STM  on  all point-to-point connections with the ERTMS/ETCS on-board:
-- a) intentionally deleted
-- b) with each transmitted application message from the STM to the ERTMS/ETCS onboard function or DMI channel.
-- 9.3.1.4 The  STM  shall  report  its  current  state  on  all  point-to-point  connections  with  the ERTMS/ETCS on-board:
-- a) intentionally deleted
-- b) with each transmitted application message from the STM to the ERTMS/ETCS onboard function or DMI channel, and
-- c)  whenever  the  STM  state  is  changed,  while  the  connection  to  the  respective ERTMS/ETCS on-board function or DMI channel is established.
-
-<!-- image -->
-
-9.3.1.4.1 Exception: The FA state shall be reported if possible. Due to a failure of the STM itself it may not be possible to report the FA state.
-
-© This document has been developed and released by UNISIG
-
-<!-- image -->
-
-## 10. STM CONTROL FUNCTION
-
-## 10.1 General requirements
-
-- 10.1.1.1 It  shall  be possible to configure the ERTMS/ETCS on-board equipment with the list of STMs installed on-board.
-- 10.1.1.2 The STM Control Function shall maintain a list of 'available' STMs, which includes all STMs  that  have  an  established  connection  to  the  STM  Control  Function  and  report either CS, HS or DA state.
-- 10.1.1.3 Level  NTC  X  shall  be  considered  as  'Available  for  use'  for  level  transition  (see  [1] paragraph 5.10.2.4.1) if the STM X associated to this level is available.
-- 10.1.1.4 The STM Control Function shall send to the STM the following information when the connection to the STM is established:
-- a) The ERTMS/ETCS on-board functions that are available
-- b) The ETCS bus address of all available ERTMS/ETCS on-board functions
-- c)  The safety level of all available ERTMS/ETCS on-board functions (see 6.2)
-- 10.1.1.4.1  Note: Only Juridical Data and DMI channels 2, 3 &amp; 4 can be marked as not available.
-- 10.1.1.5 The STM Control Function shall inform the STM about the active DMI channel
-- a) whenever the active DMI channel changes,
-- b) whenever the connection to STM Control Function is established.
-
-## 10.2 Association of STM X to Level NTC X
-
-- 10.2.1.1 The ERTMS/ETCS on-board shall be configurable with a look-up table that gives the correspondence  between  NID\_NTC  values  and  the  NID\_STM  values  of  the  STM(s) fitted  on-board.  For  each  NID\_NTC  value  within  this  look-up  table,  a  list  of  one  or several NID\_STM values shall be configured, with a priority order.
-- 10.2.1.1.1  Note: A National System can cover the functionalities of other National Systems having their  own  NID\_NTC  values.  For  that  case,  the  look-up  table  is  needed  to  map  the NID\_NTC  values  corresponding  to  these  encapsulated  National  Systems  to  the NID\_STM value(s) of the STM(s) fitted on-board supporting them. But an entry in the look-up  table  is  not  needed  for  the  case  there  is  a  one-to-one  relation  between NID\_NTC value and NID\_STM value.
-- 10.2.1.1.2  Throughout this document, 'STM X' stands for 'STM associated to Level NTC X'. This STM is not necessarily fitted on-board.
-- 10.2.1.2 If  Level  NTC  X  (defined  by  its  NID\_NTC)  is  not  already  associated  to  an  STM,  the ERTMS/ETCS on-board shall associate this Level NTC X to STM X as follows:
-- a) When a level transition order to Level NTC X is accepted,
-
-© This document has been developed and released by UNISIG
-
-<!-- image -->
-
-the STM X shall be the STM which NID\_STM is equal to NID\_NTC, if the level transition  order  is  received  from  a  trackside  constituent  with  ETCS  system version  strictly  lower  than  2.0  or  if  the  look-up  table  does  not  contain  the NID\_NTC value of Level NTC X.
-
-Otherwise  the  STM  X  shall  be  the  STM  having  the  highest  priority  among  the available STMs linked to the NID\_NTC value in the look-up table. If there is no available STM linked to this NID\_NTC value, the STM X shall be the STM having the highest priority among the STMs linked to this NID\_NTC value.
-
-- b) When the ERTMS/ETCS on-board receives airgap data to be transmitted to an STM with the NID\_NTC value of Level NTC X, the STM X shall be associated as for the level transition.
-- c)  When the Level NTC X is selected/validated by driver,
-
-the STM X shall be the STM which NID\_STM is equal to NID\_NTC, if the look-up table does not contain the NID\_NTC value of Level NTC X.
-
-Otherwise,  the  STM  X  shall  be  the  STM  having  the  highest  priority  among  the available STMs linked to this NID\_NTC value in the look-up table. If there is no available STM linked to this NID\_NTC value, then the STM X shall be the STM having the highest priority  among the connected STMs linked to this NID\_NTC value and that are not considered as failed or seen as isolated. Otherwise, the STM X shall be the STM having the highest priority among the STMs linked to this NID\_NTC value.
-
-- 10.2.1.3 The association between a Level NTC X and an STM X shall be kept until the Level NTC X is left  after  having  been  entered,  or  until  the  Stand-By  or  No  Power  mode  is entered.
-- 10.2.1.3.1  Note: If STM X associated to the current Level NTC X is no more available, it remains associated to Level NTC X until one of these conditions is fulfilled, even if another STM supporting NTC X is available. This avoids that there is a change of active STM that is neither due to a level transition from trackside, nor due to a driver level selection/validation.
-
-## 10.3 STM MANAGER SYSTEM
-
-## 10.3.1 Scope
-
-10.3.1.1 The present chapter does not specify the whole STM Control Function, but only the part of the STM Control Function that manages the states of the connected STM(s).
-
-## 10.3.2 State transition orders
-
-- 10.3.2.1 The STM Control Function STM state order table is a table that lists all the events that lead to a state order given by the STM Control Function to the STM.
-
-<!-- image -->
-
-10.3.2.2 STM state order table (ERTMS/ETCS on-board STM Control Function)
-
-| NP         | < A15                                           | < A15                                           | < A15                                           | < A15                                                 | < A15                                                 | < A15                                                            | < A15   |
-|------------|-------------------------------------------------|-------------------------------------------------|-------------------------------------------------|-------------------------------------------------------|-------------------------------------------------------|------------------------------------------------------------------|---------|
-| A1 >       | PO                                              | < A1                                            | < A1                                            | < A1                                                  | < A1                                                  | < A1                                                             | < A1    |
-|            | A2 >                                            | CO                                              |                                                 |                                                       |                                                       |                                                                  |         |
-|            |                                                 | A3 >                                            | DE                                              |                                                       |                                                       |                                                                  |         |
-|            |                                                 | A4a >                                           | A4a >                                           | CS                                                    | < C4a < E4a < G4a < H4a < I4a < J4a                   | < B4a < B4b < I4a < A4b < E4a < K4a < L4a                        |         |
-|            |                                                 |                                                 |                                                 | A6 > B6 >                                             | HS                                                    |                                                                  |         |
-|            |                                                 |                                                 |                                                 | A9>                                                   | A9 >                                                  | DA                                                               |         |
-| A17 > B16> | A16 > B16 > C16 > H16 > I16 > L16 > P16 > A17 > | A16 > B16 > C16 > H16 > I16 > O16 > P16 > A17 > | A16 > B16 > C16 > H16 > I16 > O16 > P16 > A17 > | A16 > B16 > C16 > D16 > H16 > N16 > O16 > P16 > A17 > | A16 > B16 > C16 > D16 > H16 > N16 > O16 > P16 > A17 > | A16 > B16 > C16 > E16 > F16 > H16 > N16 > O16 > P16 > Q16> A17 > | FA      |
-
-10.3.2.3
-
-The state indicated in table 10.3.2.2 corresponds to the last state report received from the STM or to FA state if an FA state order has been sent since the reception of the last state report. The STM Control Function shall consider the STM to be in NP when it has not received any state report from the STM.
-
-STM  state  order  conditions  table  applicable  to  STM  X,  associated  to  Level  NTC  X
-
-10.3.2.4 (ERTMS/ETCS on-board STM Control Function)
-
-| Condition Id   | Content of the conditions                                                 |
-|----------------|---------------------------------------------------------------------------|
-| A1             | (STM X connects to the STM Control Function) AND (STM X reports PO state) |
-| A2             | ('Request CO state' received from STM X)                                  |
-
-© This document has been developed and released by UNISIG
-
-<!-- image -->
-
-| Condition Id   | Content of the conditions                                                                                                                                                                                                                              |
-|----------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| A3             | ('Request DE state' received from STM X) AND (ETCS Train Data is validated)                                                                                                                                                                            |
-| A4a            | ('Request CS state' received from STM X)                                                                                                                                                                                                               |
-| B4a            | (ERTMS/ETCS on-board performs a level transition ordered by the trackside from Level NTC X to Level 0, 1, 2, 3)                                                                                                                                        |
-| C4a            | (announcement for a transition to Level NTC X is stored) AND (STM X reports HS state) AND (a level transition order to Level NTC Y is received before the transition to Level NTC X) AND (STM X is different from the STM Y associated to Level NTC Y) |
-| B4b            | (The driver manually changes the level from Level NTC X to Level NTC Y) AND (STM X is different from the STM Y associated to Level NTC Y)                                                                                                              |
-| E4a            | (ETCS mode changes to SB)                                                                                                                                                                                                                              |
-| G4a            | (STM X reports 'HS state') AND (no transition to any level associated to STM X for further location is stored on-board) AND (Override function is not active) AND (ETCS level is different from any level associated to STM X)                         |
-| H4a            | (ETCS mode is SB) AND (No cab is active)                                                                                                                                                                                                               |
-| I4a            | (ETCS mode changes to SH)                                                                                                                                                                                                                              |
-| J4a            | (announcement for a transition to Level NTC X is stored) AND (STM X reports HS state) AND (a level transition order to Level 0, 1, 2 or 3 is received before the transition to Level NTC X)                                                            |
-| K4a            | (The driver manually changes the level from Level NTC X to Level 0, 1, 2 or 3)                                                                                                                                                                         |
-| L4a            | (ETCS mode changes to TR)                                                                                                                                                                                                                              |
-| A4b            | (ERTMS/ETCS on-board performs a transition ordered by the trackside from Level NTC X to Level NTC Y) AND (STM X is different from the STM Y associated to Level NTC Y)                                                                                 |
-| A6             | (A transition to Level NTC X for a further location is stored on-board) AND (STM X reports CS state) AND (no other STM reports HS state)                                                                                                               |
-| B6             | (ETCS mode is SB) AND (Cab is active) AND (valid level of the ERTMS/ETCS on-board is Level NTC X) AND (STM X reports CS state) AND (no other STM reports HS state)                                                                                     |
-| A9             | (level of the ERTMS/ETCS on-board is Level NTC X) AND (STM X reports CS or HS state) AND (no other STM reports DA state) AND (ETCS mode is SN, SL or NL)                                                                                               |
-| A15            | (the ERTMS/ETCS on-board equipment is NOT powered)                                                                                                                                                                                                     |
-| A16            | (the STM Control Function receives from STM X a state request which is not allowed by the state transition table)                                                                                                                                      |
-| B16            | (STM X reports a state it must not be in according to table 9.2.1.1)                                                                                                                                                                                   |
-| C16            | (the STM Control Function has sent a state transition order except 'DA state transition order' and except 'conditional CS state transition order') AND (STM X does not report the required state within a maximum delay time of 10 seconds)            |
-
-© This document has been developed and released by UNISIG
-
-<!-- image -->
-
-| Condition Id   | Content of the conditions                                                                                                                                                                                                                                                                                           |
-|----------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| D16            | (the STM Control Function has sent a 'DA state transition order') AND (STM X does not report the required state within a maximum delay time of 5 seconds)                                                                                                                                                           |
-| E16            | (the STM Control Function has sent a 'conditional CS state transition order') AND (STM X does not report CS state or send a 'National Trip Procedure' information within a maximum delay time of 10 seconds)                                                                                                        |
-| F16            | (the STM Control Function has sent a 'conditional CS state transition order') AND (the STM Control Function has already received a 'National Trip Procedure' information from STM X) AND (STM X does not report CS state or send a 'National Trip Procedure' information within a maximum delay time of 10 seconds) |
-| H16            | (a final disconnection between the ERTMS/ETCS on-board STM Control Function and STM X was detected (see [3] and [2]))                                                                                                                                                                                               |
-| I16            | (The ERTMS/ETCS on-board performs a transition ordered by trackside to Level NTC X) AND (STM X is not available)                                                                                                                                                                                                    |
-| L16            | (STM X has not yet sent the Specific NTC Data Need) AND (STM X requests CO state)                                                                                                                                                                                                                                   |
-| N16            | (The timeout TrainDataView_STM_Response_Timeout for STM X has expired)                                                                                                                                                                                                                                              |
-| O16            | (The timeout TrainDataEntry_STM_Response_Timeout for STM X has expired)                                                                                                                                                                                                                                             |
-| P16            | (A safety-related information has not been transmitted to STM because of disconnection)                                                                                                                                                                                                                             |
-| Q16            | ('National Trip Procedure' is active) AND (STM X reports again 'National Trip Procedure' information) AND (the current ETCS mode is PT or UN)                                                                                                                                                                       |
-| A17            | (STM X reports FA state)                                                                                                                                                                                                                                                                                            |
-
-10.3.2.5 Note: The delay is shorter for transition to DA state because this transition is assumed as the most critical one from a safety aspect.
-
-- 10.3.2.6
-
-When the conditions to change the STM state within the STM Control Function are valid according to 10.3.2.2 and 10.3.2.4, the STM  Control Function shall send the corresponding state transition order to STM X.
-
-10.3.2.6.1  Exception 1: The STM Control Function shall not send an order for NP or PO state.
-
-10.3.2.6.2  Exception 2: The STM Control Function shall not send an order for FA state if the STM has reported FA state (transition A17).
-
-10.3.2.7
-
-When the state transition  order  is  going  to  CS  state,  the  STM  Control  Function  shall send  an  'unconditional  order  CS  state'  for  the  transitions  A4a,  B4a,  C4a,  E4a,  G4a, H4a, I4a, J4a, K4a and L4a, and a 'conditional order CS state' for the transitions A4b and B4b.
-
-10.3.2.8 Note about Q16 condition: The Trip mode is entered if the STM X is in National Trip Procedure when a transition to level 0, 1, 2 or 3 occurs. The National Trip Procedure
-
-<!-- image -->
-
-may still be reported after this transition in case the STM has been ordered to CS with a conditional order due to a previous level transition from NTC X to NTC Y.
-
-## 10.3.3 Requirements linked to state transition orders and state reports
-
-- 10.3.3.1 The  STM  Control  Function  shall  not  evaluate  the  state  transition  order  conditions, except conditions to FA state, if this STM has not reported the state corresponding to the last state transition order.
-- 10.3.3.2 An STM is considered as active by the ERTMS/ETCS on-board from the moment it has sent the DA state order to the STM until it sends another state order to this STM (except 'conditional CS state transition order') or receives a state report different from DA from this STM.
-- 10.3.3.3 The  STM  Control  Function  shall  command  the  emergency  brake  from  the  moment  a 'conditional  CS  state  transition  order'  has  been  sent  to  a  STM  and  this  STM  is  in National Trip Procedure, up to the moment this STM reports CS state, or is considered as failed and the train reaches standstill.
-- 10.3.3.3.1  Note: This brake command avoids that the train could run untimely without supervision, in case the active STM does not send a brake command but still sends its National Trip Procedure which delays the activation of the STM of the newly entered area.
-- 10.3.3.4 The STM Control Function shall apply the emergency brake when the level is NTC X and the mode is SN and STM X is known as installed on-board but not available.
-- 10.3.3.5 Exception: the brake shall not be applied in case the STM X is known to be isolated, through the corresponding input on the Train Interface.
-- 10.3.3.6 The emergency brake application shall be released by the STM Control Function when
-- a) the STM X has established the connection to the STM Control Function after a nonfinal disconnection and the reported STM X state is DA,
-- b) or the level changes to Level 0, 1, 2, 3,
-- c)  or the level changes to a Level NTC Y that is not associated to STM X,
-- d) or the mode SN is left with no change of level,
-- e) or the dedicated input on the Train Interface informs the ERTMS/ETCS on-board that the STM X is isolated.
-- 10.3.3.7 The ERTMS/ETCS on-board shall accept the reconnection of an STM not considered as in FA state or reporting PO state, except in case of final disconnection on Safety Layers.
-- 10.3.3.8 The STM Control Function shall inform the driver that the STM X is not available while all of the following conditions are fulfilled
-- -the level is NTC X,
-- -and (the mode is SN) or (the mode is NL and has been so for at least 5s),
-- -and STM X is known as installed on-board but not available,
-
-<!-- image -->
-
-- -and STM X is not known to be isolated through the corresponding input on the Train Interface.
-
-10.3.3.8.1  Note:  the  5s  delay  on  the  information  to  the  driver  is  required  because  the  STM  X requests to enter in CS state only after the mode has changed to NL.
-
-## 10.4 ETCS data
-
-10.4.1.1 The ETCS data transmitted by the ERTMS/ETCS on-board to the STMs shall include a subset of the ETCS Train Data (defined in [1]), as listed below:
-
-- a) Train category(ies)
-- b) Train length
-- c)  Traction / brake parameters
-- d) Maximum train speed
-- e) Loading gauge
-- f)  Axle load category
-- g) Traction system(s) accepted by the engine
-- h) Train fitted with airtight system
-9. 10.4.1.2 The ETCS data transmitted by the ERTMS/ETCS on-board to the STMs shall include a subset of the ETCS Train Data entry input fields (defined in [9]), as listed below:
-- a) Train Type, if applicable for the train
-11. 10.4.1.3 Note:  Extra  data  for  the  available  STMs  are  handled  in  the  Specific  NTC  Data  Entry procedure see chapter 10.7.
-12. 10.4.1.4 The traction / brake parameters shall include:
-- a) Equivalent brake build up time for full service brake for the combination of none of the special brakes being used
-- b) Equivalent brake build up time for emergency brake for the combination of none of the special brakes being used
-- c)  Traction cut off time
-- d) Brake position
-- e) Brake percentage, if applicable for the train
-18. 10.4.1.5 The ETCS data transmitted by the ERTMS/ETCS on-board to the STMs shall include a subset of ETCS Additional Data (defined in [1]) as listed below:
-- a) Train Running Number
-- b) ETCS identity
-- c)  Adhesion factor
-- d) Date and Time (UTC Time)
-
-© This document has been developed and released by UNISIG
-
-<!-- image -->
-
-- 10.4.1.6 The ETCS data transmitted by the ERTMS/ETCS on-board to the STMs shall include the ETCS National / Default Values (defined in [1])
-- 10.4.1.7 The STM Control Function shall transmit the subset of valid ETCS Train Data when the ETCS Train Data is validated.
-- 10.4.1.7.1  Note: ETCS Train Data could be changed and validated from sources different from the driver if acquired from ERTMS/ETCS on-board external sources.
-- 10.4.1.8 The STM Control Function shall transmit the valid ETCS Additional Data
-- a) when the STM has entered into Configuration (CO) state, and
-- b) when the valid ETCS Additional Data except date / time has changed.
-- 10.4.1.9 The  STM  Control  Function  shall  transmit  the  currently  used  ETCS  National  /  Default Values
-- a) when the STM has entered into Configuration (CO) state, and
-- b) when the currently used ETCS National Values have changed (this also includes the case when the National Values are reset to the Default Values).
-
-## 10.5 ETCS status data
-
-- 10.5.1.1 The STM Control Function shall send the  ETCS status data consisting of the current ETCS mode and level (defined in [1]):
-- a) To all connected STMs whenever the ETCS mode or level changes.
-- b) To any STM when the connection to the STM Control Function is established.
-
-## 10.6 Language used to display information to the driver
-
-- 10.6.1.1 The STM Control Function shall transmit the language used to display information to the driver:
-- a) To all connected STMs whenever the language is changed,
-- b) To any STM when the connection to the STM Control Function is established.
-
-## 10.7 Specific NTC Data Entry
-
-## 10.7.1 Definitions
-
-- 10.7.1.1 The 'Specific NTC Data' are the national data that need to be requested to the driver.
-- 10.7.1.2 The STM may use the transmitted ETCS data: ETCS Train Data, ETCS Additional Data and ETCS National Values in order to reduce the entry of 'Specific NTC Data' by the driver.
-- 10.7.1.3 All  'Specific NTC Data' used by all the different STMs are assigned a unique identity made of NID\_STM and Data Identifier.
-
-© This document has been developed and released by UNISIG
-
-<!-- image -->
-
-- 10.7.1.4 The process to deliver those 'Specific NTC Data' to the STM is called 'Specific NTC Data Entry'.
-- 10.7.1.4.1  Note:  Specific  NTC  Data  Entry  is  possible  at  start-up  and  later  on  during  mission through the Train Data Entry procedure.
-
-## 10.7.2 Responsibilities
-
-- 10.7.2.1 The ERTMS/ETCS on-board equipment is responsible for the dialogue with the driver during the Specific NTC Data Entry/Validation process, for checking the technical range checks (if configured on-board) and for the transmission of the Specific NTC Data after the driver's validation.
-- 10.7.2.2 The  STM  is  responsible  for checking  the content (e.g. range, spares, internal dependency of parameters) of the data. The STM can be exempted of technical range checks if those are configured in the ERTMS/ETCS on-board equipment.
-
-## 10.7.3 General requirements
-
-- 10.7.3.1 The ERTMS/ETCS on-board equipment shall offer the possibility to the driver to skip the Specific NTC Data Entry for a STM.
-- 10.7.3.2 The ETCS Train Data as well as the Specific NTC Data might become invalid within the STM at any time due to national requirements. In this case, the STM may request the data from the ETCS by sending the 'Specific NTC Data Need'.
-- 10.7.3.3 Specific NTC Data can be or become invalid, because:
-- a) the  ETCS  Train  Data  Entry/Specific  NTC  Data  Entry  procedure  has  not  yet  been performed or has been aborted, or
-- b) the driver has skipped the Specific NTC Data Entry for this STM before the STM has sent the 'End of Specific NTC Data Entry' to the ERTMS/ETCS on-board, or
-- c)  the  ETCS Train Data Entry procedure has already been performed by the time the STM has entered  into  CO  state,  e.g.  the  STM  has  been  powered  on  or  restarted during train mission, or
-- d) the  ETCS  Train  Data  has  changed  from  sources different  from  the  driver  and  this change impacts the validity status of the Specific  NTC Data, according to national rules, or
-- e) because of STM internal function, e.g. national shunting.
-- 10.7.3.4 When the ERTMS/ETCS on-board receives the 'Specific NTC Data Need' while in FS, LS,  SR,  OS,  UN,  TR,  PT  and  SN  modes,  it  shall  inform  the  driver  that  the  national system needs data.
-- 10.7.3.5 The ERTMS/ETCS on-board shall delete this information to the driver when the driver initiates the Train Data entry procedure or when the corresponding STM is considered as failed or when this STM is known to be isolated by TIU 'NTC isolation status' input data.
-
-<!-- image -->
-
-- 10.7.3.6 The  STM  requests  its  Specific  NTC  Data  with  a  'Specific  NTC  Data  Entry  request' which  shall  include  for  each  Specific  NTC  Data,  the  following  information:  the  label, optionally a default value, and optionally values for a dedicated keyboard.
-- 10.7.3.7 Note: Unless values for a dedicated keyboard are provided or the type of keyboard is configured on-board, an alphanumeric keyboard will by default be used (see document ref [9]).
-- 10.7.3.8 It shall be possible to configure in the ERTMS/ETCS on-board the following parameters for any STM:
-- 1) The window titles for the NTC data entry, the NTC data validation and the NTC data view windows
-- 2) For each Specific NTC Data Identifier not using a dedicated keyboard:
-- a)  The type of keyboard amongst numeric, enhanced numeric and alphanumeric
-- b) If  the  type  of  keyboard  is  numeric  or  enhanced  numeric,  whether  leading zeros have to be kept and sent to the STM
-- c) The  allowed  minimum  and  maximum  value,  that  shall  be  used  by  the ERTMS/ETCS on-board with a technical range check
-- 10.7.3.9 By  analogy  to  the  modification/revalidation  of  ETCS  Train  data,  the  [1]  requirements 3.14.1.7.3,  3.18.3.3.1  regarding  the  brake  command/release  when  a  movement  is detected  while  modifying  or  revalidating  the  Train  Data  in  normal  operation  after  the start of mission shall also apply for the NTC data modification/revalidation.
-
-## 10.7.4 Specific NTC Data Entry procedure
-
-- 10.7.4.1 As soon as the ETCS Train Data is validated by the driver and if the connected STM is in CO, DE, CS, HS or DA state, the ERTMS/ETCS on-board shall indicate to the STM the beginning of its Specific NTC Data Entry procedure by sending the START flag.
-- 10.7.4.2 The ETCS Train Data shall be sent immediately after the START flag.
 - 10.7.4.3 While a Specific NTC Data Entry is ongoing, the ERTMS/ETCS on-board shall indicate to the STM the end of its Specific NTC Data Entry procedure by sending the STOP flag when one of the following conditions is fulfilled:
 - a) after having received the 'End of Specific NTC Data Entry' from the respective STM,
 - b) at expiration of the timeout specified in 10.7.4.9 for the respective STM,

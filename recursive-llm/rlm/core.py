@@ -1,34 +1,28 @@
-"""Core RLM implementation."""
+"""Core RLM implementation using Datapizza AI."""
 
 import asyncio
-import re
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any
 
-import litellm
+from datapizza.clients.openai_like import OpenAILikeClient
+from datapizza.memory import Memory
+from datapizza.type import TextBlock, ROLE
 
-from .types import Message
+from .types import CompletionResult
 from .repl import REPLExecutor, REPLError
-from .prompts import build_system_prompt
+from .prompts import build_system_prompt, build_user_prompt
 from .parser import parse_response, is_final
 
-
 class RLMError(Exception):
-    """Base error for RLM."""
     pass
-
 
 class MaxIterationsError(RLMError):
-    """Max iterations exceeded."""
     pass
-
 
 class MaxDepthError(RLMError):
-    """Max recursion depth exceeded."""
     pass
 
-
 class RLM:
-    """Recursive Language Model."""
+    """Recursive Language Model powered by Datapizza AI."""
 
     def __init__(
         self,
@@ -41,227 +35,26 @@ class RLM:
         _current_depth: int = 0,
         **llm_kwargs: Any
     ):
-        """
-        Initialize RLM.
-
-        Args:
-            model: Model name (e.g., "gpt-4o", "claude-sonnet-4", "ollama/llama3.2")
-            recursive_model: Optional cheaper model for recursive calls
-            api_base: Optional API base URL
-            api_key: Optional API key
-            max_depth: Maximum recursion depth
-            max_iterations: Maximum REPL iterations per call
-            _current_depth: Internal current depth tracker
-            **llm_kwargs: Additional LiteLLM parameters
-        """
         self.model = model
         self.recursive_model = recursive_model or model
-        self.api_base = api_base
-        self.api_key = api_key
+        self.api_base = api_base or "http://localhost:11434/v1"
+        self.api_key = api_key or "ollama"
         self.max_depth = max_depth
         self.max_iterations = max_iterations
         self._current_depth = _current_depth
         self.llm_kwargs = llm_kwargs
 
-        self.repl = REPLExecutor()
-
-        # Stats
+        # Statistiche Interne
         self._llm_calls = 0
         self._iterations = 0
+        self._total_tokens = 0
 
-    def complete(
-        self,
-        query: str = "",
-        context: str = "",
-        **kwargs: Any
-    ) -> str:
-        """
-        Sync wrapper for acomplete.
-
-        Args:
-            query: User query (optional if query is in context)
-            context: Context to process (optional, can pass query here)
-            **kwargs: Additional LiteLLM parameters
-
-        Returns:
-            Final answer string
-
-        Examples:
-            # Standard usage
-            rlm.complete(query="Summarize this", context=document)
-
-            # Query in context (RLM will extract task)
-            rlm.complete(context="Summarize this document: ...")
-
-            # Single string (treat as context)
-            rlm.complete("Process this text and extract dates")
-        """
-        # If only one argument provided, treat it as context
-        if query and not context:
-            context = query
-            query = ""
-
-        return asyncio.run(self.acomplete(query, context, **kwargs))
-
-    async def acomplete(
-        self,
-        query: str = "",
-        context: str = "",
-        **kwargs: Any
-    ) -> str:
-        """
-        Main async complete method.
-
-        Args:
-            query: User query (optional if query is in context)
-            context: Context to process (optional, can pass query here)
-            **kwargs: Additional LiteLLM parameters
-
-        Returns:
-            Final answer string
-
-        Raises:
-            MaxIterationsError: If max iterations exceeded
-            MaxDepthError: If max recursion depth exceeded
-
-        Examples:
-            # Explicit query and context
-            await rlm.acomplete(query="What is this?", context=doc)
-
-            # Query embedded in context
-            await rlm.acomplete(context="Extract all dates from: ...")
-
-            # LLM will figure out the task
-            await rlm.acomplete(context=document_with_instructions)
-        """
-        # If only query provided, treat it as context
-        if query and not context:
-            context = query
-            query = ""
-        if self._current_depth >= self.max_depth:
-            raise MaxDepthError(f"Max recursion depth ({self.max_depth}) exceeded")
-
-        # Initialize REPL environment
-        repl_env = self._build_repl_env(query, context)
-
-        # Build initial messages
-        system_prompt = build_system_prompt(len(context), self._current_depth)
-        messages: List[Message] = [
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": query}
-        ]
-
-        # Main loop
-        for iteration in range(self.max_iterations):
-            self._iterations = iteration + 1
-
-            # Call LLM
-            response = await self._call_llm(messages, **kwargs)
-            print(f"\n--- iter {iteration} ---\n{response[:300]}")
-
-            # Check for FINAL
-            if is_final(response):
-                answer = parse_response(response, repl_env)
-                if answer is not None:
-                    return answer
-
-            # Execute code in REPL
-            try:
-                exec_result = self.repl.execute(response, repl_env)
-            except REPLError as e:
-                exec_result = f"Error: {str(e)}"
-            except Exception as e:
-                exec_result = f"Unexpected error: {str(e)}"
-
-            # Add to conversation
-            messages.append({"role": "assistant", "content": response})
-            messages.append({"role": "user", "content": exec_result})
-
-        raise MaxIterationsError(
-            f"Max iterations ({self.max_iterations}) exceeded without FINAL()"
-        )
-
-    async def _call_llm(
-        self,
-        messages: List[Message],
-        **kwargs: Any
-    ) -> str:
-        """
-        Call LLM API.
-
-        Args:
-            messages: Conversation messages
-            **kwargs: Additional parameters (can override model here)
-
-        Returns:
-            LLM response text
-        """
-        self._llm_calls += 1
-
-        # Choose model based on depth
-        default_model = self.model if self._current_depth == 0 else self.recursive_model
-
-        # Allow override via kwargs
-        model = kwargs.pop('model', default_model)
-
-        # Merge kwargs
-        call_kwargs = {**self.llm_kwargs, **kwargs}
-        if self.api_base:
-            call_kwargs['api_base'] = self.api_base
-        if self.api_key:
-            call_kwargs['api_key'] = self.api_key
-
-        # Call LiteLLM
-        response = await litellm.acompletion(
-            model=model,
-            messages=messages,
-            **call_kwargs
-        )
-
-        # Extract text
-        return response.choices[0].message.content
-
-    def _build_repl_env(self, query: str, context: str) -> Dict[str, Any]:
-        """
-        Build REPL environment.
-
-        Args:
-            query: User query
-            context: Context string
-
-        Returns:
-            Environment dict
-        """
-        env: Dict[str, Any] = {
-            'context': context,
-            'query': query,
-            'recursive_llm': self._make_recursive_fn(),
-            're': re,  # Whitelist re module
-        }
-        return env
-
-    def _make_recursive_fn(self) -> Any:
-        """
-        Create recursive LLM function for REPL.
-
-        Returns:
-            Async function that can be called from REPL
-        """
+    def _create_env(self, context: str, query: str) -> Dict[str, Any]:
+        """Create REPL environment with recursive capabilities."""
         async def recursive_llm(sub_query: str, sub_context: str) -> str:
-            """
-            Recursively process sub-context.
+            if self._current_depth >= self.max_depth:
+                return "Error: Maximum recursion depth exceeded."
 
-            Args:
-                sub_query: Query for sub-context
-                sub_context: Sub-context to process
-
-            Returns:
-                Answer from recursive call
-            """
-            if self._current_depth + 1 >= self.max_depth:
-                return f"Max recursion depth ({self.max_depth}) reached"
-
-            # Create sub-RLM with increased depth
             sub_rlm = RLM(
                 model=self.recursive_model,
                 recursive_model=self.recursive_model,
@@ -273,34 +66,117 @@ class RLM:
                 **self.llm_kwargs
             )
 
-            return await sub_rlm.acomplete(sub_query, sub_context)
+            result = await sub_rlm.acomplete(sub_query, sub_context)
+            # Accumula i token dai sotto-livelli ricorsivi al livello principale
+            self._total_tokens += sub_rlm.stats.get('total_tokens', 0)
+            return result['answer']
 
-        # Wrap in sync function for REPL compatibility
         def sync_recursive_llm(sub_query: str, sub_context: str) -> str:
-            """Sync wrapper for recursive_llm."""
-            # Check if we're in an async context
             try:
                 loop = asyncio.get_running_loop()
-                # We're in async context, but REPL is sync
-                # Create a new thread to run async code
                 import concurrent.futures
                 with concurrent.futures.ThreadPoolExecutor() as executor:
-                    future = executor.submit(
-                        asyncio.run,
-                        recursive_llm(sub_query, sub_context)
-                    )
+                    future = executor.submit(asyncio.run, recursive_llm(sub_query, sub_context))
                     return future.result()
             except RuntimeError:
-                # No running loop, safe to use asyncio.run
                 return asyncio.run(recursive_llm(sub_query, sub_context))
 
-        return sync_recursive_llm
+        return {
+            'context': context,
+            'query': query,
+            'recursive_llm': sync_recursive_llm
+        }
+
+    async def acomplete(self, query: str, context: str) -> CompletionResult:
+        env = self._create_env(context, query)
+        repl = REPLExecutor(timeout=self.llm_kwargs.get('timeout', 5), max_output_chars=10_000)
+
+        system_prompt = build_system_prompt(len(context), self._current_depth)
+
+        # Inizializzazione Client Datapizza
+        client = OpenAILikeClient(
+            api_key=self.api_key,
+            model=self.model,
+            system_prompt=system_prompt,
+            base_url=self.api_base
+        )
+
+        memory = Memory()
+        current_query = build_user_prompt(query)
+
+        for iteration in range(self.max_iterations):
+            self._iterations += 1
+            self._llm_calls += 1
+
+            try:
+                # Chiamata sincrona a Datapizza racchiusa in un thread per non bloccare async
+                response = await asyncio.to_thread(client.invoke, current_query, memory=memory)
+                llm_text = response.text if hasattr(response, 'text') else str(response)
+
+                # --- ESTRAZIONE TOKEN DATAPIZZA + EURISTICA OLLAMA ---
+                tokens = 0
+                if hasattr(response, 'usage') and response.usage:
+                    tokens = getattr(response.usage, 'total_tokens', 0)
+                    if tokens == 0:
+                        tokens = getattr(response.usage, 'prompt_tokens', 0) + getattr(response.usage, 'completion_tokens', 0)
+                if tokens == 0:
+                    tokens = getattr(response, 'prompt_tokens_used', 0) + getattr(response, 'completion_tokens_used', 0)
+
+                # Fallback in caso di stream/API difettosa
+                if tokens == 0:
+                    input_len = len(current_query) + sum(len(str(t.content)) for t in memory.turns) + len(system_prompt)
+                    tokens = (input_len + len(llm_text)) // 4
+
+                self._total_tokens += int(tokens)
+
+            except Exception as e:
+                raise RLMError(f"LLM call failed: {str(e)}")
+
+            # Aggiornamento manuale della cronologia della chat per Datapizza
+            memory.add_turn(TextBlock(content=current_query), role=ROLE.USER)
+            memory.add_turn(TextBlock(content=llm_text), role=ROLE.ASSISTANT)
+
+            # Controlla se la risposta è finale
+            if is_final(llm_text):
+                answer = parse_response(llm_text, env)
+                if answer is not None:
+                    return {
+                        "answer": answer,
+                        "iterations": self._iterations,
+                        "depth": self._current_depth,
+                        "llm_calls": self._llm_calls,
+                        "total_tokens": self._total_tokens
+                    }
+
+            # Se non è finale, estrae ed esegue il codice Python nel REPL
+            try:
+                execution_result = repl.execute(llm_text, env)
+            except Exception as e:
+                execution_result = f"Error: {e}"
+
+            # Passa l'output del REPL alla prossima iterazione
+            current_query = f"REPL OUTPUT:\n{execution_result}\n\nWhat is your next step?"
+
+        raise MaxIterationsError(f"Exceeded max iterations ({self.max_iterations})")
+
+    def complete(self, query: str, context: str) -> str:
+        """Wrapper Sincrono: Restituisce la risposta e popola le stats."""
+        self._llm_calls = 0
+        self._iterations = 0
+        self._total_tokens = 0
+
+        try:
+            result = asyncio.run(self.acomplete(query, context))
+            return result["answer"]
+        except Exception as e:
+            return f"Error: {e}"
 
     @property
     def stats(self) -> Dict[str, int]:
-        """Get execution statistics."""
+        """Restituisce le metriche dell'ultima esecuzione."""
         return {
             'llm_calls': self._llm_calls,
             'iterations': self._iterations,
             'depth': self._current_depth,
+            'total_tokens': self._total_tokens
         }

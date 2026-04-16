@@ -9,7 +9,7 @@ def main():
     parser = argparse.ArgumentParser(description="Estrae dati usando RLM partendo da un Markdown e un file Excel di domande.")
     parser.add_argument("--md_file", required=True, help="Percorso del file Markdown di input contenente il testo.")
     parser.add_argument("--excel_in", required=True, help="Percorso del file Excel/CSV contenente le domande.")
-    parser.add_argument("--excel_out", default="risposte_modello.xlsx", help="Percorso del file Excel di output da generare.")
+    parser.add_argument("--excel_out", default="risposte_subset_26_35_40_58.xlsx", help="Percorso del file Excel di output da generare.")
     args = parser.parse_args()
 
     # 1. Lettura del file Markdown
