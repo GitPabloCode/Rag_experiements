@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """
-convert_pdf.py - Converte un PDF in Markdown, JSON citabile e PDF annotato con bounding box.
+convert_pdf.py - Converte un PDF in Markdown annotato, JSON citabile e PDF con bounding box.
 
 Funzionalità:
   - Estrazione testo con layout preservato
   - Salvataggio immagini in images/ con riferimenti nel Markdown
   - Riconoscimento formule matematiche → LaTeX
-  - JSON ibrido citabile: ogni paragrafo ha un ID univoco + metadati di provenienza
-    (pagina, bbox, tipo elemento) → ideale per sistemi multi-agente con citazione della fonte
-  - Visualizzazione bounding box per pagina unite in un unico PDF (senza frecce)
+  - Markdown con anchor inline [¶N] su ogni chunk citabile
+  - JSON citazioni (citations.json): lookup O(1) per anchor → {page, type, content}
+  - JSON ibrido completo (document_citabile.json): tutti i chunk con metadati
+  - Visualizzazione bounding box per pagina unite in un unico PDF
   - Range di pagine selezionabile
   - Warning HuggingFace/transformers soppressi
 
@@ -23,6 +24,16 @@ Utilizzo:
   python convert_pdf.py documento.pdf --no-bbox-pdf
   python convert_pdf.py documento.pdf --no-math --no-images
   python convert_pdf.py documento.pdf --ocr
+
+Formato anchor nel Markdown:
+  Ogni chunk citabile riceve un anchor inline [¶N] dove N è l'indice progressivo.
+  Esempio testo:    "Il treno deve fermarsi entro 50m. [¶42]"
+  Esempio heading:  "## 4.1.1 Rules for balises [¶15]"
+  Esempio tabella:  anchor su riga separata prima della tabella: "[¶23]"
+
+Citazione agente:
+  [fonte: ¶42, page=3, type=text, file="documento.pdf"]
+  → lookup in citations.json["¶42"] per recuperare content + metadati
 """
 
 # ── Soppressione warning HuggingFace/transformers ─────────────────────────────
@@ -60,6 +71,28 @@ LABEL_COLORS: dict[str, tuple[int, int, int]] = {
 }
 DEFAULT_COLOR = (100, 100, 100)
 
+# Tipi di chunk da NON ancorare (non utili per citazione)
+_NON_CITABLE_TYPES = {"picture", "page_header", "page_footer", "footnote"}
+# Testi che indicano contenuto vuoto/cancellato
+_SKIP_CONTENT_PATTERNS = (
+    "intentionally deleted",
+    "[immagine: ]",
+    "[formula]",
+)
+
+
+def _is_citable(chunk: dict) -> bool:
+    """Restituisce True se il chunk merita un anchor di citazione."""
+    if chunk["type"] in _NON_CITABLE_TYPES:
+        return False
+    content_lower = chunk["content"].strip().lower()
+    if not content_lower:
+        return False
+    for pat in _SKIP_CONTENT_PATTERNS:
+        if content_lower == pat or content_lower.endswith(pat):
+            return False
+    return True
+
 
 # ─── Parsing argomenti ───────────────────────────────────────────────────────
 
@@ -79,7 +112,7 @@ def parse_pages(spec: str | None) -> set[int] | None:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Converte un PDF in Markdown, JSON citabile e PDF annotato.",
+        description="Converte un PDF in Markdown annotato, JSON citabile e PDF con bounding box.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog=__doc__,
     )
@@ -146,55 +179,60 @@ def run_conversion(pdf_path: Path, extract_images: bool, extract_math: bool,
     return converter.convert(str(pdf_path))
 
 
-# ─── JSON ibrido citabile ────────────────────────────────────────────────────
-
-
-
+# ─── JSON ibrido + anchor ────────────────────────────────────────────────────
 
 def _get_item_type(item) -> str:
-    """Restituisce il tipo leggibile dell'item."""
     label = getattr(item, "label", None)
     if label is None:
         return type(item).__name__.lower().replace("item", "")
     return label.value if hasattr(label, "value") else str(label)
 
 
-def build_hybrid_json(doc_result, pdf_path: Path,
-                       page_filter: set[int] | None,
-                       image_map: dict[str, str]) -> dict[str, Any]:
+def build_chunks(doc_result, pdf_path: Path,
+                 page_filter: set[int] | None,
+                 image_map: dict[str, str]) -> list[dict[str, Any]]:
     """
-    Costruisce il JSON ibrido snello per sistemi multi-agente.
-
-    Struttura di ogni chunk:
-    {
-      "page_id":      3,            ← numero pagina (1-based)
-      "paragraph_id": "p0042",      ← ID univoco del paragrafo (progressivo)
-      "type":         "text",       ← text | section_header | title | list_item |
-                                       table | formula | picture | code | caption | …
-      "content":      "…markdown…"  ← contenuto in formato Markdown (quello che legge il modello)
-    }
+    Costruisce la lista di chunk dal documento Docling.
+    Ogni chunk ha:
+      paragraph_id  – ID progressivo stile "p0042" (tutti i chunk, per compatibilità)
+      anchor        – stringa "¶N" solo sui chunk citabili (None altrimenti)
+      page_id       – numero pagina (1-based)
+      type          – tipo elemento
+      content       – contenuto Markdown
     """
     doc = doc_result.document
     chunks: list[dict[str, Any]] = []
-    para_idx = 0
+    para_idx = 0   # progressivo globale (tutti i chunk)
+    anchor_idx = 0  # progressivo solo per chunk citabili
 
     for item, _level in doc.iterate_items():
-        # Filtra per pagina se richiesto
+        # Filtra per pagina
         item_pages: set[int] = set()
         for prov in getattr(item, "prov", []):
             item_pages.add(prov.page_no)
         if page_filter and item_pages and not item_pages.intersection(page_filter):
             continue
 
-        # Pagina di riferimento (prima occorrenza)
         page_id: int | None = None
+        bbox_raw: dict | None = None
+        page_width: float | None = None
+        page_height: float | None = None
+
         if hasattr(item, "prov") and item.prov:
             page_id = item.prov[0].page_no
+            try:
+                raw = item.prov[0].bbox
+                bbox_raw = {"l": raw.l, "t": raw.t, "r": raw.r, "b": raw.b}
+                if page_id is not None and page_id in doc.pages:
+                    pg = doc.pages[page_id]
+                    page_width = pg.size.width
+                    page_height = pg.size.height
+            except Exception:
+                pass
 
-        # Tipo elemento
         item_type = _get_item_type(item)
 
-        # Contenuto in Markdown
+        # Contenuto Markdown
         try:
             from docling_core.types.doc import TableItem as TI, PictureItem as PI
             if isinstance(item, TI):
@@ -210,10 +248,8 @@ def build_hybrid_json(doc_result, pdf_path: Path,
                 md_content = f"![{caption_md}]({img_path})" if img_path else f"[immagine: {caption_md}]"
             else:
                 raw = getattr(item, "text", "") or ""
-                # Formule: wrappa in LaTeX se il tipo è formula
                 if item_type == "formula":
                     md_content = f"$$\n{raw}\n$$" if raw else "[formula]"
-                # Intestazioni: aggiungi markdown heading
                 elif item_type == "section_header":
                     lvl = getattr(item, "level", 1) or 1
                     md_content = f"{'#' * lvl} {raw}"
@@ -230,21 +266,70 @@ def build_hybrid_json(doc_result, pdf_path: Path,
             md_content = getattr(item, "text", "") or ""
 
         if not md_content.strip():
-            continue  # salta elementi vuoti
+            continue
 
-        chunks.append({
-            "page_id":      page_id,
+        chunk: dict[str, Any] = {
             "paragraph_id": f"p{para_idx:04d}",
+            "anchor":       None,           # verrà assegnato sotto se citabile
+            "page_id":      page_id,
             "type":         item_type,
             "content":      md_content,
-        })
+            "bbox":         bbox_raw,
+            "page_width":   page_width,
+            "page_height":  page_height,
+        }
+
+        # Assegna anchor solo ai chunk citabili
+        if _is_citable(chunk):
+            chunk["anchor"] = f"¶{anchor_idx}"
+            anchor_idx += 1
+
+        chunks.append(chunk)
         para_idx += 1
 
+    return chunks
+
+
+def build_hybrid_json(chunks: list[dict], pdf_path: Path,
+                      total_pages: int) -> dict[str, Any]:
+    """JSON completo con tutti i chunk (compatibile con il formato originale)."""
     return {
-        "source_file": pdf_path.name,
-        "total_pages": len(doc_result.document.pages),
-        "total_chunks": len(chunks),
-        "chunks": chunks,
+        "source_file":   pdf_path.name,
+        "total_pages":   total_pages,
+        "total_chunks":  len(chunks),
+        "citable_chunks": sum(1 for c in chunks if c["anchor"] is not None),
+        "chunks":        chunks,
+    }
+
+
+def build_citations_index(chunks: list[dict], pdf_path: Path) -> dict[str, Any]:
+    """
+    Indice di citazione per lookup O(1).
+    Chiave: anchor string "¶N"
+    Valore: {paragraph_id, page_id, type, content}
+
+    Uso agente:
+      citations["¶42"]  →  {page_id: 3, type: "text", content: "…"}
+    """
+    index: dict[str, Any] = {}
+    for chunk in chunks:
+        if chunk["anchor"] is None:
+            continue
+        index[chunk["anchor"]] = {
+            "paragraph_id": chunk["paragraph_id"],
+            "page_id":      chunk["page_id"],
+            "type":         chunk["type"],
+            "content":      chunk["content"],
+            "bbox":         chunk.get("bbox"),
+            "page_width":   chunk.get("page_width"),
+            "page_height":  chunk.get("page_height"),
+        }
+    return {
+        "source_file":    pdf_path.name,
+        "total_citable":  len(index),
+        "anchor_format":  "¶N  (e.g. ¶0, ¶42, ¶255)",
+        "usage":          'citations["¶42"] → {paragraph_id, page_id, type, content}',
+        "citations":      index,
     }
 
 
@@ -268,19 +353,72 @@ def save_images(doc_result, images_dir: Path) -> dict[str, str]:
     return image_map
 
 
-# ─── Export MD ───────────────────────────────────────────────────────────────
+# ─── Export Markdown con anchor inline ───────────────────────────────────────
 
-def export_markdown(doc_result, output_dir: Path, image_map: dict[str, str],
-                    page_filter: set[int] | None) -> Path:
-    md_text: str = doc_result.document.export_to_markdown()
-    for ref_key, img_rel_path in image_map.items():
-        alt = img_rel_path.replace("images/", "").replace(".png", "")
-        md_img = f"![{alt}]({img_rel_path})"
-        for ph in [f"<!-- image, {ref_key} -->", f"![]({ref_key})"]:
-            md_text = md_text.replace(ph, md_img)
+def _inject_anchor(md_content: str, anchor: str, item_type: str) -> str:
+    """
+    Inserisce l'anchor [¶N] nel punto corretto in base al tipo di elemento.
+
+    - heading  → "## Titolo [¶N]"          (anchor in fondo alla riga)
+    - table    → "[¶N]\n| col |…"          (anchor su riga separata PRIMA)
+    - formula  → "$$\\n…\\n$$ [¶N]"        (anchor dopo il blocco)
+    - code     → "```\\n…\\n``` [¶N]"      (anchor dopo il blocco)
+    - altri    → "Testo. [¶N]"             (anchor in fondo al testo)
+    """
+    tag = f"[{anchor}]"
+
+    if item_type in ("section_header", "title"):
+        # Prima riga = heading; anchor in coda sulla stessa riga
+        lines = md_content.split("\n", 1)
+        lines[0] = lines[0].rstrip() + f" {tag}"
+        return "\n".join(lines)
+
+    if item_type == "table":
+        # Anchor su riga separata prima della tabella, così non rompe il parser MD
+        return f"{tag}\n{md_content}"
+
+    if item_type in ("formula", "code"):
+        # Anchor sulla stessa riga dopo la chiusura del blocco
+        return md_content.rstrip() + f" {tag}"
+
+    # Default: testo, list_item, caption, key_value, ecc.
+    return md_content.rstrip() + f" {tag}"
+
+
+def export_markdown_with_anchors(chunks: list[dict],
+                                  output_dir: Path,
+                                  page_filter: set[int] | None) -> Path:
+    """
+    Genera il Markdown con anchor inline [¶N] su ogni chunk citabile.
+    I chunk non citabili (immagini, placeholder, ecc.) vengono inclusi senza anchor.
+    """
+    lines: list[str] = []
+
     if page_filter:
         pages_str = ", ".join(str(p) for p in sorted(page_filter))
-        md_text = f"> ⚠️ Documento estratto dalle pagine: {pages_str}\n\n" + md_text
+        lines.append(f"> ⚠️ Documento estratto dalle pagine: {pages_str}\n")
+
+    current_page: int | None = None
+
+    for chunk in chunks:
+        page_id  = chunk["page_id"]
+        content  = chunk["content"]
+        anchor   = chunk["anchor"]
+        typ      = chunk["type"]
+
+        # Separatore di pagina
+        if page_id is not None and page_id != current_page:
+            current_page = page_id
+            lines.append(f"\n---\n<!-- pagina {page_id} -->\n")
+
+        # Inietta anchor se presente
+        if anchor is not None:
+            content = _inject_anchor(content, anchor, typ)
+
+        lines.append(content)
+        lines.append("")  # riga vuota tra elementi
+
+    md_text = "\n".join(lines)
     md_path = output_dir / "document.md"
     md_path.write_text(md_text, encoding="utf-8")
     return md_path
@@ -335,6 +473,48 @@ def draw_bboxes_on_page(doc_result, page_no: int):
     return img
 
 
+def draw_single_bbox_on_page(doc_result, page_no: int, bbox: dict,
+                             page_w: float, page_h: float, label_str: str):
+    """Disegna SOLO la bbox specificata sulla pagina, senza altre annotazioni."""
+    from PIL import Image, ImageDraw, ImageFont
+    page = doc_result.document.pages.get(page_no)
+    if page is None or page.image is None or page.image.pil_image is None:
+        return None
+    img: Image.Image = page.image.pil_image.copy().convert("RGB")
+    draw = ImageDraw.Draw(img, "RGBA")
+    img_w, img_h = img.size
+    scale_x = img_w / page_w
+    scale_y = img_h / page_h
+
+    # bbox è in coordinate bottom-left (Docling raw) → converti a top-left
+    tl_top = page_h - bbox["t"]
+    tl_bot = page_h - bbox["b"]
+    x0, y0 = bbox["l"] * scale_x, tl_top * scale_y
+    x1, y1 = bbox["r"] * scale_x, tl_bot * scale_y
+
+    if x1 <= x0 or y1 <= y0:
+        return None
+
+    r, g, b = _get_label_color(label_str)
+    draw.rectangle([x0, y0, x1, y1], outline=(r, g, b, 240), width=3,
+                   fill=(r, g, b, 35))
+
+    try:
+        font = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 14)
+    except Exception:
+        font = ImageFont.load_default()
+
+    label_short = label_str.replace("_", " ")
+    try:
+        tb = draw.textbbox((x0 + 2, y0 + 2), label_short, font=font)
+        draw.rectangle(tb, fill=(r, g, b, 220))
+        draw.text((x0 + 2, y0 + 2), label_short, fill=(255, 255, 255), font=font)
+    except Exception:
+        draw.text((x0 + 2, y0 + 2), label_short, fill=(r, g, b))
+
+    return img
+
+
 def build_bbox_pdf(doc_result, output_dir: Path, page_filter: set[int] | None) -> Path | None:
     try:
         from fpdf import FPDF
@@ -374,6 +554,76 @@ def build_bbox_pdf(doc_result, output_dir: Path, page_filter: set[int] | None) -
     return out_path
 
 
+def build_bbox_single_pdf(doc_result, citable_chunks: list[dict],
+                          output_dir: Path, page_filter: set[int] | None) -> Path | None:
+    """Genera un PDF dove ogni pagina mostra UNA SOLA bbox per anchor.
+
+    Per ogni chunk citabile (con bbox), produce una pagina che evidenzia
+    esclusivamente la bbox di quel paragrafo. L'ordine delle pagine segue
+    l'ordine degli anchor (¶0, ¶1, ..., ¶N).
+
+    Restituisce il percorso del PDF e popola 'single_pdf_page' su ogni chunk.
+    """
+    try:
+        from fpdf import FPDF
+    except ImportError:
+        print("   ⚠️  fpdf2 non trovato. PDF single-bbox saltato.")
+        return None
+
+    # Filtra solo chunk citabili con bbox valida e pagina nel filtro
+    eligible = [
+        c for c in citable_chunks
+        if c.get("anchor") and c.get("bbox")
+        and c.get("page_id") is not None
+        and (page_filter is None or c["page_id"] in page_filter)
+        and c.get("page_width") and c.get("page_height")
+    ]
+
+    if not eligible:
+        print("   ⚠️  Nessun chunk con bbox valida, PDF single-bbox saltato.")
+        return None
+
+    bbox_dir = output_dir / "_bbox_single_tmp"
+    bbox_dir.mkdir(exist_ok=True)
+    pdf = FPDF(unit="pt")
+    single_page = 0
+
+    for chunk in eligible:
+        anchor = chunk["anchor"]
+        page_no = chunk["page_id"]
+        bbox = chunk["bbox"]
+        page_w = chunk["page_width"]
+        page_h = chunk["page_height"]
+        typ = chunk["type"]
+
+        annotated = draw_single_bbox_on_page(doc_result, page_no, bbox, page_w, page_h, typ)
+        if annotated is None:
+            continue
+
+        single_page += 1
+        tmp_path = bbox_dir / f"single_bbox_{anchor.replace('¶', 'p')}.png"
+        annotated.save(str(tmp_path), format="PNG")
+        pdf.add_page(format=(page_w, page_h))
+        pdf.image(str(tmp_path), x=0, y=0, w=page_w, h=page_h)
+        chunk["single_pdf_page"] = single_page
+
+    if single_page == 0:
+        for f in bbox_dir.glob("*.png"):
+            f.unlink()
+        bbox_dir.rmdir()
+        return None
+
+    out_path = output_dir / "annotated_bboxes_single.pdf"
+    pdf.output(str(out_path))
+
+    for f in bbox_dir.glob("*.png"):
+        f.unlink()
+    bbox_dir.rmdir()
+
+    print(f"   ✅ PDF single-bbox: {single_page} pagine (una per anchor)")
+    return out_path
+
+
 # ─── Main ────────────────────────────────────────────────────────────────────
 
 def main() -> None:
@@ -405,10 +655,7 @@ def main() -> None:
     need_page_imgs = generate_bbox
 
     print(f"📁 Output in        : {output_dir}")
-    if page_filter:
-        print(f"📑 Pagine           : {', '.join(str(p) for p in sorted(page_filter))}")
-    else:
-        print(f"📑 Pagine           : tutte")
+    print(f"📑 Pagine           : {', '.join(str(p) for p in sorted(page_filter)) if page_filter else 'tutte'}")
     print(f"🖼  Immagini         : {'✅' if extract_images else '❌'}")
     print(f"➕ Formule (LaTeX)   : {'✅' if extract_math else '❌'}")
     print(f"🔲 PDF bounding box  : {'✅' if generate_bbox else '❌'}")
@@ -425,7 +672,6 @@ def main() -> None:
         print(f"❌ Errore conversione: {e}")
         raise
 
-    # Escludi immagini di pagine fuori dal range per il PDF bbox
     if page_filter:
         doc = doc_result.document
         all_pages = set(doc.pages.keys())
@@ -440,19 +686,33 @@ def main() -> None:
         image_map = save_images(doc_result, images_dir)
         print(f"   Totale: {len(image_map)}")
 
-    # ── Markdown ──────────────────────────────────────────────────────────────
-    print("\n📝 Esportazione Markdown...")
-    md_path = export_markdown(doc_result, output_dir, image_map, page_filter)
+    # ── Costruzione chunk (unica passata, condivisa da MD e JSON) ─────────────
+    print("\n🧩 Costruzione chunk con anchor...")
+    total_pages = len(doc_result.document.pages)
+    chunks = build_chunks(doc_result, pdf_path, page_filter, image_map)
+    citable = sum(1 for c in chunks if c["anchor"] is not None)
+    print(f"   Totale chunk: {len(chunks)}  |  Citabili (con anchor): {citable}")
+
+    # ── Markdown con anchor inline ────────────────────────────────────────────
+    print("\n📝 Esportazione Markdown con anchor [¶N]...")
+    md_path = export_markdown_with_anchors(chunks, output_dir, page_filter)
     print(f"   ✅ {md_path}")
 
-    # ── JSON ibrido citabile ──────────────────────────────────────────────────
-    print("\n🗂  Generazione JSON ibrido citabile...")
-    hybrid = build_hybrid_json(doc_result, pdf_path, page_filter, image_map)
+    # ── JSON indice citazioni (lookup O(1)) ───────────────────────────────────
+    print("\n🗂  Generazione indice citazioni (citations.json)...")
+    citations = build_citations_index(chunks, pdf_path)
+    cit_path = output_dir / "citations.json"
+    cit_path.write_text(json.dumps(citations, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"   ✅ {cit_path}  ({citations['total_citable']} entry)")
+
+    # ── JSON ibrido completo ──────────────────────────────────────────────────
+    print("\n🗂  Generazione JSON ibrido completo (document_citabile.json)...")
+    hybrid = build_hybrid_json(chunks, pdf_path, total_pages)
     json_path = output_dir / "document_citabile.json"
     json_path.write_text(json.dumps(hybrid, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"   ✅ {json_path}  ({hybrid['document']['num_chunks']} chunk)")
+    print(f"   ✅ {json_path}  ({hybrid['total_chunks']} chunk, {hybrid['citable_chunks']} citabili)")
 
-    # ── JSON raw Docling (legacy) ─────────────────────────────────────────────
+    # ── JSON raw Docling ──────────────────────────────────────────────────────
     print("\n🗂  Esportazione JSON raw Docling...")
     try:
         raw_dict = doc_result.document.export_to_dict()
@@ -464,26 +724,43 @@ def main() -> None:
 
     # ── PDF bounding box ──────────────────────────────────────────────────────
     bbox_pdf_path: Path | None = None
+    bbox_single_path: Path | None = None
     if generate_bbox:
         print("\n🔲 Generazione PDF con bounding box annotate...")
         bbox_pdf_path = build_bbox_pdf(doc_result, output_dir, page_filter)
         if bbox_pdf_path:
             print(f"   ✅ {bbox_pdf_path}")
 
+        print("\n🔲 Generazione PDF con bbox singola per citazione...")
+        bbox_single_path = build_bbox_single_pdf(doc_result, chunks, output_dir, page_filter)
+        if bbox_single_path:
+            print(f"   ✅ {bbox_single_path}")
+            for chunk in chunks:
+                anchor = chunk.get("anchor")
+                if anchor and "single_pdf_page" in chunk and anchor in citations.get("citations", {}):
+                    citations["citations"][anchor]["single_pdf_page"] = chunk["single_pdf_page"]
+            cit_path.write_text(json.dumps(citations, ensure_ascii=False, indent=2), encoding="utf-8")
+            print(f"   ✅ citations.json aggiornato con single_pdf_page")
+
     # ── Riepilogo ─────────────────────────────────────────────────────────────
     print("\n" + "=" * 60)
     print("✅ Conversione completata!")
-    print(f"   📄 Markdown              : {md_path}")
-    print(f"   📋 JSON citabile         : {json_path}  ({hybrid['total_chunks']} chunk)")
-    print(f"   🗂  JSON raw Docling      : {raw_json_path}")
+    print(f"   📄 Markdown (con anchor)  : {md_path}")
+    print(f"   🗂  Indice citazioni       : {cit_path}  ({citations['total_citable']} entry)")
+    print(f"   📋 JSON ibrido completo   : {json_path}  ({hybrid['total_chunks']} chunk)")
+    print(f"   🗂  JSON raw Docling       : {raw_json_path}")
     if image_map:
-        print(f"   🖼  Immagini             : {images_dir} ({len(image_map)} file)")
+        print(f"   🖼  Immagini              : {images_dir} ({len(image_map)} file)")
     if bbox_pdf_path:
-        print(f"   🔲 PDF bbox annotato     : {bbox_pdf_path}")
+        print(f"   🔲 PDF bbox annotato      : {bbox_pdf_path}")
+    if bbox_single_path:
+        print(f"   🔲 PDF bbox singola       : {bbox_single_path}")
     print("=" * 60)
     print()
     print("💡 Citazione agente:")
-    print('   [fonte: paragraph_id="p0042", page_id=3, file="documento.pdf"]')
+    print('   Markdown:  "…testo… [¶42]"')
+    print('   Lookup:    citations["¶42"]  →  {page_id, type, content, paragraph_id}')
+    print('   Completo:  [fonte: ¶42, page=3, type=text, file="documento.pdf"]')
 
 
 if __name__ == "__main__":
